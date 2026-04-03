@@ -8,7 +8,7 @@
 
 > ⚠️ **This project has been abandoned and is no longer maintained.**
 >
-> **PCS 1.0 is no longer receiving security updates or patches.**
+> **PCS 1.x series will no longer receive security updates or patches.**
 >
 > Please consider migrating to [PCS2](#) when it becomes available, or use at your own risk.
 
@@ -17,7 +17,8 @@
 ## 📋 Supported Versions
 
 | Version | Supported | Status |
-| ------- | --------- | ------ |
+|:-------:|:---------:|:-------|
+| 1.1.0 | :x: | **Incomplete** - No updates |
 | 1.0.x | :x: | **Abandoned** - No security updates |
 | < 1.0 | :x: | **Abandoned** - No security updates |
 
@@ -40,7 +41,7 @@ If you discover a security issue:
 By using this abandoned software, you acknowledge that:
 - No security patches will be provided
 - Known vulnerabilities will not be fixed
-- Use in production environments is **strongly discouraged**
+- **Strongly discouraged** for use in production environments
 
 ---
 
