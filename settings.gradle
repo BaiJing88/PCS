@@ -1,0 +1,22 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url 'https://maven.fabricmc.net/' }
+        mavenCentral()
+    }
+    
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == 'fabric-loom') {
+                useModule("net.fabricmc:fabric-loom:${requested.version}")
+            }
+        }
+    }
+}
+
+rootProject.name = 'PlayerCreditSystem'
+
+include 'PCS-API'
+include 'PCS-CentralController'
+include 'PCS-Spigot'
+include 'PCS-Fabric'

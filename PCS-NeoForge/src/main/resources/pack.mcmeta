@@ -1,0 +1,17 @@
+{
+  "modloader": "neoforge",
+  "loaderVersion": "[21,)",
+  "license": "AGPL-3.0",
+  "modid": "pcs",
+  "name": "Player Credit System",
+  "description": "Minecraft Cross-Server Player Credit Management System",
+  "version": "1.0.0",
+  "authors": [
+    "Bai_Jing88"
+  ],
+  "dependencies": {
+    "minecraft": "[1.21.4,1.22)",
+    "pcsapi": "1.0.0"
+  },
+  "acceptsMinecraftKeys": true
+}

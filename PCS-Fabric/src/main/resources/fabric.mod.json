@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "id": "pcs",
+  "version": "1.0.1",
+  "name": "Player Credit System",
+  "description": "Minecraft Cross-Server Player Credit Management System - Fabric Edition",
+  "authors": [
+    "Bai_Jing88"
+  ],
+  "contact": {
+    "homepage": "https://github.com/Bai-Jing88/PCS",
+    "issues": "https://github.com/Bai-Jing88/PCS/issues"
+  },
+  "license": "AGPL-3.0",
+  "icon": "assets/pcs/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "main": [
+      "com.pcs.fabric.PCSFabricMod"
+    ]
+  },
+  "mixins": [
+    "pcs.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "fabric-api": "*",
+    "minecraft": ">=1.21.0"
+  },
+  "suggests": {
+    "another-mod": "*"
+  },
+  "custom": {
+    "modmenu": {
+      "badges": ["library"],
+      "links": {
+        "modmenu.discord": "https://discord.gg/pcs"
+      }
+    }
+  }
+}

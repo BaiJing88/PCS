@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.pcs'
+version = '1.0.1'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+    // Spigot Maven Repository
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    // Paper Maven Repository (for 1.21+ support)
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+
+dependencies {
+    // PCS-API 模块
+    implementation project(':PCS-API')
+    
+    // Spigot API 1.21
+    compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
+    
+    // Paper API (可选，如果需要使用Paper特有的API)
+    // compileOnly 'io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT'
+    
+    // WebSocket Client (Java-WebSocket)
+    implementation 'org.java-websocket:Java-WebSocket:1.5.4'
+    
+    // SLF4J (日志)
+    implementation 'org.slf4j:slf4j-api:2.0.9'
+}
+
+// 打包 Fat Jar (包含所有依赖)
+jar {
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    manifest {
+        attributes(
+            'Implementation-Title': 'PCS-Spigot',
+            'Implementation-Version': version,
+            'Implementation-Vendor': 'PCS Team'
+        )
+    }
+}
+
+processResources {
+    def props = [version: version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}

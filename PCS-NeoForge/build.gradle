@@ -1,0 +1,72 @@
+plugins {
+    id 'net.neoforged.moddev' version '2.0.5'
+    id 'java-library'
+}
+
+group = 'com.pcs'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+def minecraftVersion = '1.21.4'
+def neoforgeVersion = '1.21.4-21.0.0-beta.3'
+
+repositories {
+    maven { url 'https://maven.neoforged.net/releases' }
+    mavenCentral()
+}
+
+dependencies {
+    // NeoForge
+    neoforge "net.neoforged:neoforge:${neoforgeVersion}"
+    
+    // PCS API
+    implementation project(':PCS-API')
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'org.java-websocket:Java-WebSocket:1.5.4'
+}
+
+minecraft {
+    copyIdeResources = true
+    
+    runs {
+        client {
+            client()
+            property 'neoforge.logging.marker', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            modSource project()
+        }
+        server {
+            server()
+            property 'neoforge.logging.marker', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+            modSource project()
+        }
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+                'Specification-Title'     : 'pcs',
+                'Specification-Vendor'     : 'pcs',
+                'Specification-Version'  : '1',
+                'Implementation-Title'    : project.name,
+                'Implementation-Version'  : project.jar.archiveVersion,
+                'Implementation-Vendor'   : 'pcs',
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                'MixinConfigs'            : 'pcs.mixins.json'
+        ])
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

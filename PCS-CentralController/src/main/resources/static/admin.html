@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCS 中央控制器 - 管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { font-family: 'Noto Sans SC', sans-serif; }
+        .glass { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); }
+        .glass-card { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(8px); }
+        .gradient-bg { background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%); }
+        .glow { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
+        .pulse-glow { animation: pulseGlow 2s ease-in-out infinite; }
+        @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.2); } 50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.5); } }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.5); }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 3px; }
+        .online-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+        .online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+        .offline { background: #6b7280; }
+        .status-green { @apply text-green-400; }
+        .status-red { @apply text-red-400; }
+        .status-yellow { @apply text-yellow-400; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-gray-100">
+    <div id="app">
+        <!-- 登录页面 -->
+        <div v-if="!isLoggedIn" class="min-h-screen flex items-center justify-center p-4">
+            <div class="w-full max-w-md">
+                <div class="text-center mb-8">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-indigo-600 mb-4 glow">
+                        <i class="fas fa-server text-3xl text-white"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white mb-2">PCS 中央控制器</h1>
+                    <p class="text-gray-400">Player Credit System - 管理后台</p>
+                </div>
+                
+                <div class="glass-card rounded-2xl p-8 border border-gray-700">
+                    <form @submit.prevent="handleLogin">
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                <i class="fas fa-user mr-2"></i>用户名
+                            </label>
+                            <input v-model="loginForm.username" type="text" 
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white"
+                                placeholder="请输入用户名" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">
+                                <i class="fas fa-lock mr-2"></i>密码
+                            </label>
+                            <input v-model="loginForm.password" type="password" 
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-white"
+                                placeholder="请输入密码" required>
+                        </div>
+                        <div v-if="loginError" class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm">
+                            <i class="fas fa-exclamation-circle mr-2"></i>{{ loginError }}
+                        </div>
+                        <button type="submit" 
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-all duration-200 glow hover:shadow-lg hover:shadow-indigo-500/30"
+                            :disabled="loggingIn">
+                            <span v-if="loggingIn"><i class="fas fa-spinner fa-spin mr-2"></i>登录中...</span>
+                            <span v-else><i class="fas fa-sign-in-alt mr-2"></i>登 录</span>
+                        </button>
+                    </form>
+                </div>
+                
+                <div class="mt-6 text-center text-gray-500 text-sm">
+                    <p>© 2026 PCS - Player Credit System</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主管理界面 -->
+        <div v-else class="flex min-h-screen">
+            <!-- 侧边栏 -->
+            <aside class="w-64 glass-card border-r border-gray-700 flex flex-col fixed h-full">
+                <div class="p-4 border-b border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
+                            <i class="fas fa-server text-white"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-white">PCS</h2>
+                            <p class="text-xs text-gray-400">控制面板</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 用户信息 -->
+                <div class="p-4 border-b border-gray-700">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
+                            <i class="fas fa-user text-white text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm font-medium text-white truncate">{{ currentUser }}</p>
+                            <p class="text-xs text-green-400"><i class="fas fa-circle text-xs"></i> 在线</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <nav class="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-thin">
+                    <a v-for="item in navItems" :key="item.id" 
+                        @click="switchView(item.id)"
+                        :class="['flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all duration-200', 
+                            currentView === item.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-300 hover:bg-gray-700 hover:text-white']">
+                        <i :class="['fas', item.icon, 'w-5']"></i>
+                        <span class="font-medium">{{ item.name }}</span>
+                    </a>
+                </nav>
+                
+                <div class="p-4 border-t border-gray-700">
+                    <button @click="logout" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>退出登录</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- 主内容区 -->
+            <main class="flex-1 ml-64 p-6">
+                <!-- 仪表板 -->
+                <div v-show="currentView === 'dashboard'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-tachometer-alt mr-2 text-indigo-400"></i>仪表板
+                        </h1>
+                        <div class="flex items-center gap-2 text-sm text-gray-400">
+                            <i class="fas fa-clock"></i>
+                            <span>{{ currentTime }}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 统计卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">在线服务器</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ stats.onlineServers }}</p>
+                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-blue-600/20 flex items-center justify-center">
+                                    <i class="fas fa-server text-2xl text-blue-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">在线玩家</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ stats.onlinePlayers }}</p>
+                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-green-600/20 flex items-center justify-center">
+                                    <i class="fas fa-users text-2xl text-green-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">今日公投</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ stats.todayVotes }}</p>
+                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-purple-600/20 flex items-center justify-center">
+                                    <i class="fas fa-vote-yea text-2xl text-purple-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-gray-400 text-sm">被封禁玩家</p>
+                                    <p class="text-3xl font-bold text-white mt-1">{{ stats.bannedPlayers }}</p>
+                                </div>
+                                <div class="w-14 h-14 rounded-xl bg-red-600/20 flex items-center justify-center">
+                                    <i class="fas fa-user-slash text-2xl text-red-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 服务器列表 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-server mr-2 text-indigo-400"></i>服务器状态
+                        </h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                        <th class="pb-3">服务器</th>
+                                        <th class="pb-3">类型</th>
+                                        <th class="pb-3">状态</th>
+                                        <th class="pb-3">玩家</th>
+                                        <th class="pb-3">TPS</th>
+                                        <th class="pb-3">内存</th>
+                                        <th class="pb-3">版本</th>
+                                        <th class="pb-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="server in servers" :key="server.id" class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                        <td class="py-3">
+                                            <span class="font-medium text-white">{{ server.name }}</span>
+                                        </td>
+                                        <td class="py-3 text-gray-400">{{ server.type }}</td>
+                                        <td class="py-3">
+                                            <span :class="['inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs', server.online ? 'bg-green-900/50 text-green-400' : 'bg-gray-700 text-gray-400']">
+                                                <span class="w-2 h-2 rounded-full" :class="server.online ? 'bg-green-400' : 'bg-gray-400'"></span>
+                                                {{ server.online ? '在线' : '离线' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 text-white">{{ server.playerCount || 0 }} / {{ server.maxPlayers || 0 }}</td>
+                                        <td class="py-3">
+                                            <span :class="getTpsColor(server.tps)">{{ server.tps || 'N/A' }}</span>
+                                        </td>
+                                        <td class="py-3 text-gray-400">{{ formatMemory(server.memoryUsed, server.memoryMax) }}</td>
+                                        <td class="py-3 text-gray-400">{{ server.version || 'N/A' }}</td>
+                                        <td class="py-3">
+                                            <div class="flex items-center gap-1">
+                                                <button @click="viewServerDetail(server)" class="p-1.5 text-indigo-400 hover:bg-indigo-600/20 rounded" title="查看详情">
+                                                    <i class="fas fa-eye text-sm"></i>
+                                                </button>
+                                                <button @click="viewServerPlayers(server)" class="p-1.5 text-blue-400 hover:bg-blue-600/20 rounded" title="查看玩家">
+                                                    <i class="fas fa-users text-sm"></i>
+                                                </button>
+                                                <button @click="sendServerCommand(server)" class="p-1.5 text-gray-400 hover:bg-gray-600/20 rounded" title="发送命令">
+                                                    <i class="fas fa-terminal text-sm"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="servers.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-gray-500">
+                                            <i class="fas fa-server text-4xl mb-2 opacity-50"></i>
+                                            <p>暂无在线服务器</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- 系统状态 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <h3 class="text-white font-medium mb-4">
+                                <i class="fas fa-database mr-2 text-blue-400"></i>数据库
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-green-400"></span>
+                                <span class="text-green-400">正常</span>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <h3 class="text-white font-medium mb-4">
+                                <i class="fas fa-memory mr-2 text-purple-400"></i>Redis
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-yellow-400"></span>
+                                <span class="text-yellow-400">未连接</span>
+                            </div>
+                        </div>
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <h3 class="text-white font-medium mb-4">
+                                <i class="fas fa-user-shield mr-2 text-indigo-400"></i>当前管理员
+                            </h3>
+                            <p class="text-white">{{ currentUser }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 玩家管理 -->
+                <div v-show="currentView === 'players'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-users mr-2 text-indigo-400"></i>玩家管理
+                        </h1>
+                    </div>
+                    
+                    <!-- 搜索和筛选 -->
+                    <div class="glass-card rounded-xl p-4 border border-gray-700">
+                        <div class="flex flex-wrap gap-4">
+                            <div class="flex-1 min-w-[200px]">
+                                <input v-model="playerSearch" type="text" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="搜索玩家名称..." @input="filterPlayers">
+                            </div>
+                            <select v-model="playerFilter" @change="filterPlayers"
+                                class="px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                                <option value="all">全部玩家</option>
+                                <option value="online">在线玩家</option>
+                                <option value="offline">离线玩家</option>
+                                <option value="banned">已封禁</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- 玩家列表 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                        <th class="pb-3">玩家</th>
+                                        <th class="pb-3">信用分</th>
+                                        <th class="pb-3">状态</th>
+                                        <th class="pb-3">服务器</th>
+                                        <th class="pb-3">封禁次数</th>
+                                        <th class="pb-3">踢出次数</th>
+                                        <th class="pb-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="player in filteredPlayers" :key="player.uuid" class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                        <td class="py-3">
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                                                    <i class="fas fa-user text-gray-400"></i>
+                                                </div>
+                                                <div>
+                                                    <p class="font-medium text-white">{{ player.name }}</p>
+                                                    <p class="text-xs text-gray-500">{{ player.uuid }}</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-3">
+                                            <span :class="['px-2 py-1 rounded text-sm font-medium', getCreditColor(player.creditScore)]">
+                                                {{ player.creditScore?.toFixed(1) || 'N/A' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3">
+                                            <span :class="['inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs', player.online ? 'bg-green-900/50 text-green-400' : 'bg-gray-700 text-gray-400']">
+                                                <span class="w-2 h-2 rounded-full" :class="player.online ? 'bg-green-400' : 'bg-gray-400'"></span>
+                                                {{ player.online ? '在线' : '离线' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 text-gray-400">{{ player.server || '-' }}</td>
+                                        <td class="py-3 text-red-400">{{ player.totalBans || 0 }}</td>
+                                        <td class="py-3 text-yellow-400">{{ player.totalKicks || 0 }}</td>
+                                        <td class="py-3">
+                                            <div class="flex items-center gap-2">
+                                                <button @click="viewPlayerDetail(player)" class="p-2 text-indigo-400 hover:bg-indigo-600/20 rounded-lg" title="查看详情">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button @click="kickPlayer(player)" class="p-2 text-yellow-400 hover:bg-yellow-600/20 rounded-lg" title="踢出">
+                                                    <i class="fas fa-football"></i>
+                                                </button>
+                                                <button @click="banPlayer(player)" class="p-2 text-red-400 hover:bg-red-600/20 rounded-lg" title="封禁">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredPlayers.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-gray-500">
+                                            <i class="fas fa-users text-4xl mb-2 opacity-50"></i>
+                                            <p>暂无玩家数据</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 公投历史 -->
+                <div v-show="currentView === 'votes'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-vote-yea mr-2 text-indigo-400"></i>公投历史
+                        </h1>
+                        <button @click="loadVoteHistory" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>刷新
+                        </button>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                        <th class="pb-3">时间</th>
+                                        <th class="pb-3">发起人</th>
+                                        <th class="pb-3">目标玩家</th>
+                                        <th class="pb-3">投票类型</th>
+                                        <th class="pb-3">原因</th>
+                                        <th class="pb-3">投票结果</th>
+                                        <th class="pb-3">通过率</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="vote in voteHistory" :key="vote.id" class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                        <td class="py-3 text-gray-400">{{ formatDate(vote.voteTime) }}</td>
+                                        <td class="py-3 text-white">{{ vote.initiatorName || '系统' }}</td>
+                                        <td class="py-3 text-white">{{ vote.targetPlayerName }}</td>
+                                        <td class="py-3">
+                                            <span :class="['px-2 py-1 rounded text-xs', vote.action === 'BAN' ? 'bg-red-900/50 text-red-400' : 'bg-yellow-900/50 text-yellow-400']">
+                                                {{ vote.action }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 text-gray-400">{{ vote.reason || '-' }}</td>
+                                        <td class="py-3">
+                                            <span :class="['px-2 py-1 rounded text-xs', vote.passed ? 'bg-green-900/50 text-green-400' : 'bg-red-900/50 text-red-400']">
+                                                {{ vote.passed ? '通过' : '否决' }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3 text-gray-400">{{ vote.passRate || 0 }}%</td>
+                                    </tr>
+                                    <tr v-if="voteHistory.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-gray-500">
+                                            <i class="fas fa-vote-yea text-4xl mb-2 opacity-50"></i>
+                                            <p>暂无公投记录</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 服务器 -->
+                <div v-show="currentView === 'servers'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-server mr-2 text-indigo-400"></i>服务器管理
+                        </h1>
+                        <button @click="refreshServers" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>刷新
+                        </button>
+                    </div>
+                    
+                    <!-- 服务器卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div v-for="server in servers" :key="server.id" 
+                            class="glass-card rounded-xl p-6 border border-gray-700 hover:border-indigo-500 transition-colors cursor-pointer"
+                            @click="viewServerDetail(server)">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center">
+                                        <i class="fas fa-server text-xl text-indigo-400"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-white">{{ server.name }}</h3>
+                                        <p class="text-sm text-gray-400">{{ server.type }}</p>
+                                    </div>
+                                </div>
+                                <span :class="['px-2 py-1 rounded-full text-xs', server.online ? 'bg-green-900/50 text-green-400' : 'bg-gray-700 text-gray-400']">
+                                    {{ server.online ? '在线' : '离线' }}
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">玩家</span>
+                                    <span class="text-white">{{ server.playerCount || 0 }} / {{ server.maxPlayers || 0 }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">TPS</span>
+                                    <span :class="getTpsColor(server.tps)">{{ server.tps || 'N/A' }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">内存</span>
+                                    <span class="text-white">{{ formatMemory(server.memoryUsed, server.memoryMax) }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-400">版本</span>
+                                    <span class="text-white">{{ server.version || 'N/A' }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4 pt-4 border-t border-gray-700 flex gap-2">
+                                <button @click="viewServerPlayers(server)" class="flex-1 px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-users mr-1"></i>玩家列表
+                                </button>
+                                <button @click="sendServerCommand(server)" class="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors">
+                                    <i class="fas fa-terminal mr-1"></i>命令
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div v-if="servers.length === 0" class="col-span-full glass-card rounded-xl p-12 border border-gray-700 text-center">
+                            <i class="fas fa-server text-6xl text-gray-600 mb-4"></i>
+                            <p class="text-gray-400">暂无在线服务器</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 广播消息 -->
+                <div v-show="currentView === 'broadcast'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-bullhorn mr-2 text-indigo-400"></i>广播消息
+                        </h1>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- 发送广播 -->
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <h2 class="text-lg font-bold text-white mb-4">
+                                <i class="fas fa-paper-plane mr-2 text-indigo-400"></i>发送广播
+                            </h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">消息内容</label>
+                                    <textarea v-model="broadcastMessage" rows="4"
+                                        class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="输入广播消息..."></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-2">目标服务器</label>
+                                    <select v-model="broadcastTarget"
+                                        class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                                        <option value="ALL">全服广播</option>
+                                        <option v-for="server in servers" :key="server.id" :value="server.id">
+                                            {{ server.name }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <input type="checkbox" v-model="broadcastAsTitle" id="asTitle" 
+                                        class="w-4 h-4 bg-gray-800 border-gray-600 rounded focus:ring-indigo-500">
+                                    <label for="asTitle" class="text-sm text-gray-300">使用Title格式发送</label>
+                                </div>
+                                <button @click="sendBroadcast" :disabled="!broadcastMessage || broadcasting"
+                                    class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors">
+                                    <span v-if="broadcasting"><i class="fas fa-spinner fa-spin mr-2"></i>发送中...</span>
+                                    <span v-else><i class="fas fa-paper-plane mr-2"></i>发送广播</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 快速消息 -->
+                        <div class="glass-card rounded-xl p-6 border border-gray-700">
+                            <h2 class="text-lg font-bold text-white mb-4">
+                                <i class="fas fa-bolt mr-2 text-yellow-400"></i>快速消息
+                            </h2>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button v-for="msg in quickMessages" :key="msg" 
+                                    @click="sendQuickBroadcast(msg)"
+                                    class="px-4 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors text-left">
+                                    {{ msg }}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 广播历史 -->
+                        <div class="glass-card rounded-xl p-6 border border-gray-700 lg:col-span-2">
+                            <h2 class="text-lg font-bold text-white mb-4">
+                                <i class="fas fa-history mr-2 text-indigo-400"></i>广播历史
+                            </h2>
+                            <div class="space-y-3 max-h-64 overflow-y-auto scrollbar-thin">
+                                <div v-for="(broadcast, index) in broadcastHistory" :key="index" 
+                                    class="p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <span class="text-sm text-indigo-400">{{ broadcast.time }}</span>
+                                        <span class="text-xs text-gray-500">{{ broadcast.target }}</span>
+                                    </div>
+                                    <p class="text-white">{{ broadcast.message }}</p>
+                                </div>
+                                <div v-if="broadcastHistory.length === 0" class="text-center text-gray-500 py-4">
+                                    暂无广播历史
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 执行命令 -->
+                <div v-show="currentView === 'command'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-terminal mr-2 text-indigo-400"></i>执行命令
+                        </h1>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">选择服务器</label>
+                            <select v-model="commandServerId"
+                                class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                                <option value="">选择服务器...</option>
+                                <option v-for="server in servers" :key="server.id" :value="server.id">
+                                    {{ server.name }} ({{ server.online ? '在线' : '离线' }})
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">命令</label>
+                            <input v-model="executeCommand" type="text" 
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white font-mono focus:ring-2 focus:ring-indigo-500"
+                                placeholder="输入命令，例如: /say Hello World">
+                        </div>
+                        <button @click="executeServerCommand" :disabled="!commandServerId || !executeCommand || executing"
+                            class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors">
+                            <span v-if="executing"><i class="fas fa-spinner fa-spin mr-2"></i>执行中...</span>
+                            <span v-else><i class="fas fa-play mr-2"></i>执行命令</span>
+                        </button>
+                    </div>
+                    
+                    <!-- 命令输出 -->
+                    <div v-if="commandOutput" class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-list mr-2 text-indigo-400"></i>命令输出
+                        </h2>
+                        <pre class="bg-gray-900 p-4 rounded-lg text-green-400 font-mono text-sm overflow-x-auto">{{ commandOutput }}</pre>
+                    </div>
+                    
+                    <!-- 常用命令 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-star mr-2 text-yellow-400"></i>常用命令
+                        </h2>
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            <button v-for="cmd in commonCommands" :key="cmd.command" 
+                                @click="fillCommand(cmd.command)"
+                                class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm transition-colors text-left">
+                                <span class="text-indigo-400 font-mono">{{ cmd.command }}</span>
+                                <p class="text-gray-400 text-xs mt-1">{{ cmd.desc }}</p>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 玩家操作 -->
+                <div v-show="currentView === 'playerop'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-user-cog mr-2 text-indigo-400"></i>玩家操作
+                        </h1>
+                    </div>
+                    
+                    <!-- 操作表单 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">玩家名称</label>
+                                <input v-model="playerOpName" type="text" 
+                                    class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="输入玩家名称">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">目标服务器</label>
+                                <select v-model="playerOpServer"
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                                    <option value="ALL">所有服务器</option>
+                                    <option v-for="server in servers" :key="server.id" :value="server.id">
+                                        {{ server.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">操作类型</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <button @click="setPlayerOpType('kick')" 
+                                    :class="['p-4 rounded-lg border transition-colors text-center', playerOpType === 'kick' ? 'bg-yellow-600/20 border-yellow-500 text-yellow-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600']">
+                                    <i class="fas fa-football text-2xl mb-2"></i>
+                                    <p class="text-sm">踢出</p>
+                                </button>
+                                <button @click="setPlayerOpType('ban')" 
+                                    :class="['p-4 rounded-lg border transition-colors text-center', playerOpType === 'ban' ? 'bg-red-600/20 border-red-500 text-red-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600']">
+                                    <i class="fas fa-ban text-2xl mb-2"></i>
+                                    <p class="text-sm">封禁</p>
+                                </button>
+                                <button @click="setPlayerOpType('mute')" 
+                                    :class="['p-4 rounded-lg border transition-colors text-center', playerOpType === 'mute' ? 'bg-orange-600/20 border-orange-500 text-orange-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600']">
+                                    <i class="fas fa-comment-slash text-2xl mb-2"></i>
+                                    <p class="text-sm">禁言</p>
+                                </button>
+                                <button @click="setPlayerOpType('message')" 
+                                    :class="['p-4 rounded-lg border transition-colors text-center', playerOpType === 'message' ? 'bg-blue-600/20 border-blue-500 text-blue-400' : 'bg-gray-800 border-gray-700 text-gray-400 hover:border-gray-600']">
+                                    <i class="fas fa-envelope text-2xl mb-2"></i>
+                                    <p class="text-sm">私信</p>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-6" v-if="playerOpType !== 'message'">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">原因</label>
+                            <input v-model="playerOpReason" type="text" 
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                placeholder="输入操作原因">
+                        </div>
+                        
+                        <div class="mt-6" v-if="playerOpType === 'mute'">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">禁言天数</label>
+                            <select v-model="muteDays"
+                                class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                                <option value="1">1天</option>
+                                <option value="3">3天</option>
+                                <option value="7">7天</option>
+                                <option value="14">14天</option>
+                                <option value="30">30天</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mt-6" v-if="playerOpType === 'message'">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">消息内容</label>
+                            <textarea v-model="playerOpMessage" rows="3"
+                                class="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                placeholder="输入私信内容..."></textarea>
+                        </div>
+                        
+                        <div class="mt-6">
+                            <button @click="executePlayerOp" :disabled="!playerOpName || !playerOpType || operating"
+                                class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors">
+                                <span v-if="operating"><i class="fas fa-spinner fa-spin mr-2"></i>执行中...</span>
+                                <span v-else><i class="fas fa-check mr-2"></i>执行操作</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 临时封禁列表 -->
+                <div v-show="currentView === 'tempban'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-user-clock mr-2 text-indigo-400"></i>临时封禁列表
+                        </h1>
+                        <button @click="loadTempBans" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-sync-alt mr-2"></i>刷新
+                        </button>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                        <th class="pb-3">玩家</th>
+                                        <th class="pb-3">服务器</th>
+                                        <th class="pb-3">原因</th>
+                                        <th class="pb-3">封禁时间</th>
+                                        <th class="pb-3">过期时间</th>
+                                        <th class="pb-3">操作人</th>
+                                        <th class="pb-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="ban in tempBans" :key="ban.uuid + ban.serverId" class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                        <td class="py-3 text-white">{{ ban.playerName || ban.uuid }}</td>
+                                        <td class="py-3 text-gray-400">{{ ban.serverId }}</td>
+                                        <td class="py-3 text-red-400">{{ ban.reason }}</td>
+                                        <td class="py-3 text-gray-400">{{ formatDate(ban.kickedAt) }}</td>
+                                        <td class="py-3 text-yellow-400">{{ formatDate(ban.expireAt) }}</td>
+                                        <td class="py-3 text-indigo-400">{{ ban.kickedBy }}</td>
+                                        <td class="py-3">
+                                            <button @click="unbanFromServer(ban)" class="px-3 py-1 bg-green-600/20 hover:bg-green-600/40 text-green-400 rounded-lg text-sm">
+                                                <i class="fas fa-unlock mr-1"></i>解封
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="tempBans.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-gray-500">
+                                            <i class="fas fa-user-clock text-4xl mb-2 opacity-50"></i>
+                                            <p>暂无临时封禁记录</p>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 解除封禁 -->
+                <div v-show="currentView === 'unban'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-user-check mr-2 text-indigo-400"></i>解除封禁
+                        </h1>
+                    </div>
+                    
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-300 mb-2">玩家名称</label>
+                            <div class="flex gap-4">
+                                <input v-model="unbanPlayerName" type="text" 
+                                    class="flex-1 px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="输入玩家名称">
+                                <button @click="unbanPlayer" :disabled="!unbanPlayerName || unbanning"
+                                    class="px-6 py-3 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white font-medium rounded-lg transition-colors">
+                                    <span v-if="unbanning"><i class="fas fa-spinner fa-spin mr-2"></i>解封中...</span>
+                                    <span v-else><i class="fas fa-unlock mr-2"></i>解除封禁</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-4 bg-gray-800/50 rounded-lg border border-gray-700">
+                            <h3 class="text-white font-medium mb-2"><i class="fas fa-info-circle mr-2 text-blue-400"></i>说明</h3>
+                            <p class="text-gray-400 text-sm">输入玩家名称即可解除该玩家的全局封禁。解除封禁后，玩家将可以在所有服务器上重新加入游戏。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 系统配置 -->
+                <div v-show="currentView === 'config'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-cogs mr-2 text-indigo-400"></i>系统配置
+                        </h1>
+                    </div>
+                    
+                    <!-- 投票配置 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-vote-yea mr-2 text-indigo-400"></i>投票配置
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">投票持续时间（秒）</label>
+                                <input v-model="config.voteDuration" type="number" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">通过所需比例（%）</label>
+                                <input v-model="config.votePassRate" type="number" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">最小投票人数</label>
+                                <input v-model="config.minVotes" type="number" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">投票冷却时间（秒）</label>
+                                <input v-model="config.voteCooldown" type="number" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 投票动作 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-gavel mr-2 text-indigo-400"></i>投票动作
+                        </h2>
+                        <div class="mb-4">
+                            <div class="flex gap-2">
+                                <input v-model="newActionName" type="text" 
+                                    class="flex-1 px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="新动作名称">
+                                <button @click="addAction" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-for="(action, index) in config.availableActions" :key="index" 
+                                class="px-3 py-1 bg-gray-700 rounded-full text-white text-sm flex items-center gap-2">
+                                {{ action.name || action }}
+                                <button @click="removeAction(index)" class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- 投票原因 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-question-circle mr-2 text-indigo-400"></i>投票原因
+                        </h2>
+                        <div class="mb-4">
+                            <div class="flex gap-2">
+                                <input v-model="newReason" type="text" 
+                                    class="flex-1 px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-indigo-500"
+                                    placeholder="新原因">
+                                <button @click="addReason" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <span v-for="(reason, index) in config.availableReasons" :key="index" 
+                                class="px-3 py-1 bg-gray-700 rounded-full text-white text-sm flex items-center gap-2">
+                                {{ reason }}
+                                <button @click="removeReason(index)" class="text-red-400 hover:text-red-300">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button @click="saveConfig" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors">
+                            <i class="fas fa-save mr-2"></i>保存配置
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 管理员设置 -->
+                <div v-show="currentView === 'admin'" class="space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h1 class="text-2xl font-bold text-white">
+                            <i class="fas fa-user-shield mr-2 text-indigo-400"></i>管理员设置
+                        </h1>
+                    </div>
+                    
+                    <!-- 修改密码 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-key mr-2 text-indigo-400"></i>修改密码
+                        </h2>
+                        <div class="space-y-4 max-w-md">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">当前密码</label>
+                                <input v-model="passwordForm.oldPassword" type="password" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">新密码</label>
+                                <input v-model="passwordForm.newPassword" type="password" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">确认新密码</label>
+                                <input v-model="passwordForm.confirmPassword" type="password" 
+                                    class="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            <button @click="changePassword" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+                                <i class="fas fa-save mr-2"></i>修改密码
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 管理员列表 -->
+                    <div class="glass-card rounded-xl p-6 border border-gray-700">
+                        <h2 class="text-lg font-bold text-white mb-4">
+                            <i class="fas fa-users-cog mr-2 text-indigo-400"></i>管理员列表
+                        </h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="text-left text-gray-400 text-sm border-b border-gray-700">
+                                        <th class="pb-3">用户名</th>
+                                        <th class="pb-3">角色</th>
+                                        <th class="pb-3">状态</th>
+                                        <th class="pb-3">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-700/50">
+                                        <td class="py-3 text-white">{{ currentUser }}</td>
+                                        <td class="py-3 text-indigo-400">超级管理员</td>
+                                        <td class="py-3"><span class="text-green-400">活跃</span></td>
+                                        <td class="py-3 text-gray-400">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        
+        <!-- 消息提示 -->
+        <div v-if="toast.show" class="fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50" 
+            :class="toast.type === 'success' ? 'bg-green-600' : toast.type === 'error' ? 'bg-red-600' : 'bg-blue-600'">
+            <p class="text-white">{{ toast.message }}</p>
+        </div>
+        
+        <!-- 确认对话框 -->
+        <div v-if="confirm.show" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div class="glass-card rounded-xl p-6 border border-gray-700 max-w-md">
+                <h3 class="text-lg font-bold text-white mb-4">{{ confirm.title }}</h3>
+                <p class="text-gray-300 mb-6">{{ confirm.message }}</p>
+                <div class="flex justify-end gap-3">
+                    <button @click="confirm.show = false" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg">
+                        取消
+                    </button>
+                    <button @click="confirm.callback(); confirm.show = false" 
+                        class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg">
+                        确认
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, onUnmounted } = Vue;
+
+        createApp({
+            setup() {
+                // 状态
+                const isLoggedIn = ref(false);
+                const currentUser = ref('');
+                const currentView = ref('dashboard');
+                const loggingIn = ref(false);
+                const loginError = ref('');
+                const loginForm = ref({ username: '', password: '' });
+                const currentTime = ref('');
+                
+                // 数据
+                const stats = ref({ onlineServers: 0, onlinePlayers: 0, todayVotes: 0, bannedPlayers: 0 });
+                const servers = ref([]);
+                const players = ref([]);
+                const filteredPlayers = ref([]);
+                const voteHistory = ref([]);
+                const tempBans = ref([]);
+                const broadcastHistory = ref([]);
+                
+                // 导航
+                const navItems = ref([
+                    { id: 'dashboard', name: '仪表板', icon: 'fa-tachometer-alt' },
+                    { id: 'players', name: '玩家管理', icon: 'fa-users' },
+                    { id: 'votes', name: '公投历史', icon: 'fa-vote-yea' },
+                    { id: 'servers', name: '服务器', icon: 'fa-server' },
+                    { id: 'broadcast', name: '广播消息', icon: 'fa-bullhorn' },
+                    { id: 'command', name: '执行命令', icon: 'fa-terminal' },
+                    { id: 'playerop', name: '玩家操作', icon: 'fa-user-cog' },
+                    { id: 'tempban', name: '临时封禁列表', icon: 'fa-user-clock' },
+                    { id: 'unban', name: '解除封禁', icon: 'fa-user-check' },
+                    { id: 'config', name: '系统配置', icon: 'fa-cogs' },
+                    { id: 'admin', name: '管理员设置', icon: 'fa-user-shield' }
+                ]);
+                
+                // 广播
+                const broadcastMessage = ref('');
+                const broadcastTarget = ref('ALL');
+                const broadcastAsTitle = ref(false);
+                const broadcasting = ref(false);
+                const quickMessages = ref([
+                    '服务器即将重启，请及时下线！',
+                    '欢迎来到服务器，祝您游戏愉快！',
+                    '请遵守服务器规则，文明游戏！',
+                    '活动即将开始，请玩家做好准备！',
+                    '服务器已维护完毕，欢迎回来！'
+                ]);
+                
+                // 执行命令
+                const commandServerId = ref('');
+                const executeCommand = ref('');
+                const executing = ref(false);
+                const commandOutput = ref('');
+                const commonCommands = ref([
+                    { command: '/say Hello World', desc: '全服公告' },
+                    { command: '/weather clear', desc: '清除天气' },
+                    { command: '/time set day', desc: '设置白天' },
+                    { command: '/time set night', desc: '设置夜晚' },
+                    { command: '/give @p diamond 64', desc: '给予钻石' },
+                    { command: '/kill @a', desc: '杀死所有玩家' },
+                    { command: '/op @p', desc: '给予OP' },
+                    { command: '/deop @p', desc: '移除OP' }
+                ]);
+                
+                // 玩家操作
+                const playerOpName = ref('');
+                const playerOpServer = ref('ALL');
+                const playerOpType = ref('');
+                const playerOpReason = ref('');
+                const playerOpMessage = ref('');
+                const muteDays = ref('7');
+                const operating = ref(false);
+                
+                // 临时封禁
+                const loadTempBans = async () => {
+                    try {
+                        const allBans = [];
+                        for (const server of servers.value) {
+                            try {
+                                const res = await authFetch(`/api/admin/server/${server.id}/kick-bans`);
+                                const banData = await res.json();
+                                if (banData.bans) {
+                                    allBans.push(...banData.bans);
+                                }
+                            } catch (e) {}
+                        }
+                        tempBans.value = allBans;
+                    } catch (e) {
+                        console.error('加载临时封禁失败:', e);
+                    }
+                };
+                
+                // 解除封禁
+                const unbanPlayerName = ref('');
+                const unbanning = ref(false);
+                
+                // 配置
+                const config = ref({
+                    voteDuration: 120,
+                    votePassRate: 60,
+                    minVotes: 3,
+                    voteCooldown: 3600,
+                    availableActions: [],
+                    availableReasons: []
+                });
+                const newActionName = ref('');
+                const newReason = ref('');
+                
+                // 密码修改
+                const passwordForm = ref({ oldPassword: '', newPassword: '', confirmPassword: '' });
+                
+                // 玩家搜索
+                const playerSearch = ref('');
+                const playerFilter = ref('all');
+                
+                // 提示
+                const toast = ref({ show: false, message: '', type: 'info' });
+                const confirm = ref({ show: false, title: '', message: '', callback: () => {} });
+                
+                // 方法
+                const showToast = (message, type = 'info') => {
+                    toast.value = { show: true, message, type };
+                    setTimeout(() => toast.value.show = false, 3000);
+                };
+                
+                const updateTime = () => {
+                    const now = new Date();
+                    currentTime.value = now.toLocaleString('zh-CN');
+                };
+                
+                const handleLogin = async () => {
+                    loggingIn.value = true;
+                    loginError.value = '';
+                    try {
+                        const response = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(loginForm.value)
+                        });
+                        const data = await response.json();
+                        if (response.ok && data.token) {
+                            localStorage.setItem('token', data.token);
+                            isLoggedIn.value = true;
+                            currentUser.value = loginForm.value.username;
+                            loadDashboardData();
+                            connectWebSocket();
+                        } else {
+                            loginError.value = data.message || '登录失败';
+                        }
+                    } catch (e) {
+                        loginError.value = '网络错误';
+                    }
+                    loggingIn.value = false;
+                };
+                
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    isLoggedIn.value = false;
+                    currentUser.value = '';
+                    if (ws) ws.close();
+                };
+                
+                const loadVoteHistory = async () => {
+                    try {
+                        const response = await authFetch('/api/admin/votes/history');
+                        const data = await response.json();
+                        voteHistory.value = data.votes || data || [];
+                    } catch (e) {
+                        console.error('加载公投历史失败:', e);
+                        voteHistory.value = [];
+                    }
+                };
+
+                const loadDashboardData = async () => {
+                    await Promise.all([
+                        loadStats(),
+                        loadServers(),
+                        loadPlayers(),
+                        loadConfig()
+                    ]);
+                };
+                
+                const loadStats = async () => {
+                    try {
+                        const response = await authFetch('/api/admin/stats');
+                        const data = await response.json();
+                        // 后端字段: onlineCount, activeVotes, todayVotes, bannedCount
+                        stats.value = {
+                            onlineServers: data.onlineCount || data.onlineServers || 0,
+                            onlinePlayers: data.onlinePlayers || data.playerCount || 0,
+                            todayVotes: data.todayVotes || data.activeVotes || 0,
+                            bannedPlayers: data.bannedCount || data.bannedPlayers || 0
+                        };
+                    } catch (e) {
+                        console.error('加载统计失败:', e);
+                    }
+                };
+                
+                const loadServers = async () => {
+                    try {
+                        console.log('开始加载服务器列表...');
+                        const response = await authFetch('/api/admin/servers');
+                        console.log('服务器响应:', response);
+                        const data = await response.json();
+                        console.log('服务器数据:', data);
+                        console.log('data.servers:', data.servers);
+                        servers.value = data.servers || [];
+                        console.log('servers.value已更新:', servers.value);
+                        console.log('servers.value.length:', servers.value.length);
+                    } catch (e) {
+                        console.error('加载服务器失败:', e);
+                    }
+                };
+                
+                const loadPlayers = async () => {
+                    try {
+                        const response = await authFetch('/api/admin/players');
+                        const data = await response.json();
+                        players.value = data.players || [];
+                        filterPlayers();
+                    } catch (e) {
+                        console.error('加载玩家失败:', e);
+                    }
+                };
+                
+                const loadConfig = async () => {
+                    try {
+                        const response = await authFetch('/api/admin/config');
+                        const data = await response.json();
+                        config.value = { ...config.value, ...data };
+                    } catch (e) {
+                        console.error('加载配置失败:', e);
+                    }
+                };
+                
+                const filterPlayers = () => {
+                    let result = players.value;
+                    if (playerSearch.value) {
+                        const search = playerSearch.value.toLowerCase();
+                        result = result.filter(p => p.name?.toLowerCase().includes(search));
+                    }
+                    if (playerFilter.value === 'online') {
+                        result = result.filter(p => p.online);
+                    } else if (playerFilter.value === 'offline') {
+                        result = result.filter(p => !p.online);
+                    } else if (playerFilter.value === 'banned') {
+                        result = result.filter(p => p.currentlyBanned);
+                    }
+                    filteredPlayers.value = result;
+                };
+                
+                const getAuthHeader = () => ({
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                });
+
+                // 统一的带auth的fetch
+                const authFetch = (url, options = {}) => {
+                    return fetch(url, {
+                        ...options,
+                        headers: {
+                            ...getAuthHeader(),
+                            ...(options.headers || {})
+                        }
+                    });
+                };
+                
+                const getTpsColor = (tps) => {
+                    if (!tps) return 'text-gray-400';
+                    if (tps >= 18) return 'text-green-400';
+                    if (tps >= 15) return 'text-yellow-400';
+                    return 'text-red-400';
+                };
+                
+                const formatMemory = (used, max) => {
+                    if (!used || !max) return 'N/A';
+                    return `${(used / 1024 / 1024).toFixed(0)} / ${(max / 1024 / 1024).toFixed(0)} MB`;
+                };
+                
+                const formatDate = (dateStr) => {
+                    if (!dateStr) return '-';
+                    return new Date(dateStr).toLocaleString('zh-CN');
+                };
+                
+                const getCreditColor = (score) => {
+                    if (score >= 8) return 'bg-green-900/50 text-green-400';
+                    if (score >= 5) return 'bg-yellow-900/50 text-yellow-400';
+                    return 'bg-red-900/50 text-red-400';
+                };
+                
+                const refreshServers = () => {
+                    loadServers();
+                    showToast('服务器列表已刷新');
+                };
+                
+                // 广播功能
+                const sendBroadcast = async () => {
+                    broadcasting.value = true;
+                    try {
+                        const response = await authFetch('/api/admin/broadcast', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                message: broadcastMessage.value,
+                                targetServerId: broadcastTarget.value,
+                                useTitle: broadcastAsTitle.value
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('广播发送成功', 'success');
+                            broadcastHistory.value.unshift({
+                                message: broadcastMessage.value,
+                                target: broadcastTarget.value === 'ALL' ? '全服' : broadcastTarget.value,
+                                time: new Date().toLocaleString('zh-CN')
+                            });
+                            broadcastMessage.value = '';
+                        } else {
+                            showToast(data.message || '发送失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('发送失败', 'error');
+                    }
+                    broadcasting.value = false;
+                };
+                
+                const sendQuickBroadcast = (msg) => {
+                    broadcastMessage.value = msg;
+                    sendBroadcast();
+                };
+                
+                // 执行命令
+                const executeServerCommand = async () => {
+                    executing.value = true;
+                    commandOutput.value = '';
+                    try {
+                        const response = await authFetch('/api/admin/server/exec', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                serverId: commandServerId.value,
+                                command: executeCommand.value
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            commandOutput.value = data.output || data.message || '命令已发送';
+                        } else {
+                            commandOutput.value = '错误: ' + (data.message || '未知错误');
+                        }
+                    } catch (e) {
+                        commandOutput.value = '网络错误: ' + e.message;
+                    }
+                    executing.value = false;
+                };
+                
+                const fillCommand = (cmd) => {
+                    executeCommand.value = cmd;
+                };
+                
+                // 玩家操作
+                const setPlayerOpType = (type) => {
+                    playerOpType.value = type;
+                };
+                
+                const executePlayerOp = async () => {
+                    operating.value = true;
+                    try {
+                        let endpoint = '';
+                        let body = null;
+                        
+                        switch (playerOpType.value) {
+                            case 'kick':
+                                endpoint = '/api/admin/player/name/kick';
+                                body = { playerName: playerOpName.value, reason: playerOpReason.value, serverId: playerOpServer.value };
+                                break;
+                            case 'ban':
+                                endpoint = `/api/admin/player/name/${playerOpName.value}/ban?reason=${encodeURIComponent(playerOpReason.value)}`;
+                                break;
+                            case 'mute':
+                                endpoint = `/api/admin/player/name/${playerOpName.value}/mute?reason=${encodeURIComponent(playerOpReason.value)}&days=${muteDays.value}`;
+                                break;
+                            case 'message':
+                                endpoint = '/api/admin/player/message';
+                                body = { uuid: players.value.find(p => p.name === playerOpName.value)?.uuid, message: playerOpMessage.value, serverId: playerOpServer.value };
+                                break;
+                        }
+                        
+                        const response = await authFetch(endpoint, {
+                            method: 'POST',
+                            body: body ? JSON.stringify(body) : undefined
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('操作执行成功', 'success');
+                            playerOpName.value = '';
+                            playerOpReason.value = '';
+                            playerOpMessage.value = '';
+                        } else {
+                            showToast(data.message || '操作失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('操作失败', 'error');
+                    }
+                    operating.value = false;
+                };
+                
+                const kickPlayer = (player) => {
+                    playerOpName.value = player.name;
+                    playerOpType.value = 'kick';
+                    currentView.value = 'playerop';
+                };
+                
+                const banPlayer = (player) => {
+                    confirm.value = {
+                        show: true,
+                        title: '确认封禁',
+                        message: `确定要封禁玩家 ${player.name} 吗？`,
+                        callback: async () => {
+                            try {
+                                const response = await authFetch(`/api/admin/player/name/${player.name}/ban?reason=管理员封禁`, {
+                                    method: 'POST'
+                                });
+                                const data = await response.json();
+                                if (data.success) {
+                                    showToast('玩家已封禁', 'success');
+                                    loadPlayers();
+                                } else {
+                                    showToast(data.message || '封禁失败', 'error');
+                                }
+                            } catch (e) {
+                                showToast('封禁失败', 'error');
+                            }
+                        }
+                    };
+                };
+                
+                const viewPlayerDetail = (player) => {
+                    playerOpName.value = player.name;
+                    showToast(`玩家: ${player.name}, 信用分: ${player.creditScore}`);
+                };
+                
+                // 临时封禁
+                const unbanFromServer = async (ban) => {
+                    try {
+                        const response = await authFetch('/api/admin/player/unban-server', {
+                            method: 'POST',
+                            body: JSON.stringify({ uuid: ban.uuid, serverId: ban.serverId })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('解封成功', 'success');
+                            loadTempBans();
+                        } else {
+                            showToast(data.message || '解封失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('解封失败', 'error');
+                    }
+                };
+                
+                // 解除封禁
+                const unbanPlayer = async () => {
+                    unbanning.value = true;
+                    try {
+                        const response = await authFetch(`/api/admin/player/name/${unbanPlayerName.value}/unban`, {
+                            method: 'POST'
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('解封成功', 'success');
+                            unbanPlayerName.value = '';
+                            loadPlayers();
+                        } else {
+                            showToast(data.message || '解封失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('解封失败', 'error');
+                    }
+                    unbanning.value = false;
+                };
+                
+                // 配置
+                const addAction = () => {
+                    if (newActionName.value) {
+                        config.value.availableActions.push({ name: newActionName.value, id: Date.now().toString() });
+                        newActionName.value = '';
+                    }
+                };
+                
+                const removeAction = (index) => {
+                    config.value.availableActions.splice(index, 1);
+                };
+                
+                const addReason = () => {
+                    if (newReason.value) {
+                        config.value.availableReasons.push(newReason.value);
+                        newReason.value = '';
+                    }
+                };
+                
+                const removeReason = (index) => {
+                    config.value.availableReasons.splice(index, 1);
+                };
+                
+                const saveConfig = async () => {
+                    try {
+                        const response = await authFetch('/api/admin/config', {
+                            method: 'POST',
+                            body: JSON.stringify(config.value)
+                        });
+                        if (response.ok) {
+                            showToast('配置已保存', 'success');
+                        } else {
+                            showToast('保存失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('保存失败', 'error');
+                    }
+                };
+                
+                // 密码修改
+                const changePassword = async () => {
+                    if (passwordForm.value.newPassword !== passwordForm.value.confirmPassword) {
+                        showToast('两次密码输入不一致', 'error');
+                        return;
+                    }
+                    if (passwordForm.value.newPassword.length < 6) {
+                        showToast('新密码至少6位', 'error');
+                        return;
+                    }
+                    try {
+                        const response = await authFetch('/api/auth/change-password', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                oldPassword: passwordForm.value.oldPassword,
+                                newPassword: passwordForm.value.newPassword
+                            })
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                            showToast('密码修改成功，请重新登录', 'success');
+                            passwordForm.value = { oldPassword: '', newPassword: '', confirmPassword: '' };
+                            setTimeout(() => logout(), 2000);
+                        } else {
+                            showToast(data.message || '密码修改失败', 'error');
+                        }
+                    } catch (e) {
+                        showToast('网络错误', 'error');
+                    }
+                };
+                
+                // WebSocket
+                let ws = null;
+                const connectWebSocket = () => {
+                    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${protocol}//${window.location.host}/ws/admin`;
+                    ws = new WebSocket(wsUrl);
+                    
+                    ws.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            if (data.type === 'serverUpdate') {
+                                loadServers();
+                                loadStats();
+                            } else if (data.type === 'playerUpdate') {
+                                loadPlayers();
+                            }
+                        } catch (e) {}
+                    };
+                    
+                    ws.onclose = () => {
+                        setTimeout(connectWebSocket, 5000);
+                    };
+                };
+                
+                // 视图切换时懒加载数据
+                const switchView = (viewId) => {
+                    currentView.value = viewId;
+                    if (viewId === 'votes' && voteHistory.value.length === 0) {
+                        loadVoteHistory();
+                    } else if (viewId === 'tempban') {
+                        loadTempBans();
+                    } else if (viewId === 'servers') {
+                        loadServers();
+                    } else if (viewId === 'players') {
+                        loadPlayers();
+                    }
+                };
+
+                // 视图相关
+                const viewServerDetail = (server) => {
+                    // 显示服务器详情弹窗
+                    const detailHtml = `
+                        <div style="text-align: left; line-height: 1.6;">
+                            <h3 style="color: #4a90e2; margin-bottom: 15px;">${server.name}</h3>
+                            <p><strong>ID:</strong> ${server.id}</p>
+                            <p><strong>类型:</strong> ${server.type}</p>
+                            <p><strong>版本:</strong> ${server.version || 'N/A'}</p>
+                            <p><strong>状态:</strong> ${server.online ? '<span style="color: #27ae60;">在线</span>' : '<span style="color: #95a5a6;">离线</span>'}</p>
+                            <p><strong>玩家:</strong> ${server.playerCount || 0} / ${server.maxPlayers || 0}</p>
+                            <p><strong>TPS:</strong> <span class="${getTpsColor(server.tps).replace('text-', 'color: ').replace('400', '')}">${server.tps || 'N/A'}</span></p>
+                            <p><strong>内存:</strong> ${formatMemory(server.memoryUsed, server.memoryMax)}</p>
+                            <p><strong>最后心跳:</strong> ${formatDate(server.lastHeartbeat)}</p>
+                        </div>
+                    `;
+                    
+                    Swal.fire({
+                        title: '服务器详情',
+                        html: detailHtml,
+                        icon: 'info',
+                        width: '600px',
+                        confirmButtonColor: '#4a90e2',
+                        confirmButtonText: '关闭'
+                    });
+                };
+                
+                const viewServerPlayers = (server) => {
+                    // 切换到玩家视图并筛选该服务器的玩家
+                    currentView.value = 'players';
+                    // 自动筛选该服务器的玩家
+                    if (server && server.id) {
+                        // 延迟一下确保视图已经切换
+                        setTimeout(() => {
+                            playerSearch.value = '';
+                            // 如果没有玩家数据，先加载
+                            if (players.value.length === 0) {
+                                loadPlayers();
+                            }
+                            // 显示提示
+                            Swal.fire({
+                                title: '筛选玩家',
+                                text: `已显示服务器 ${server.name} 的玩家列表`,
+                                icon: 'info',
+                                timer: 2000,
+                                showConfirmButton: false,
+                                position: 'top-end'
+                            });
+                        }, 100);
+                    }
+                };
+                
+                const sendServerCommand = (server) => {
+                    commandServerId.value = server.id;
+                    currentView.value = 'command';
+                };
+                
+                // 初始化
+                const init = () => {
+                    updateTime();
+                    setInterval(updateTime, 1000);
+                    
+                    const token = localStorage.getItem('token');
+                    if (token) {
+                        isLoggedIn.value = true;
+                        // 尝试从token获取用户名
+                        try {
+                            const payload = JSON.parse(atob(token.split('.')[1]));
+                            currentUser.value = payload.sub || payload.username || 'admin';
+                        } catch (e) {
+                            currentUser.value = 'admin';
+                        }
+                        loadDashboardData();
+                        connectWebSocket();
+                    }
+                };
+                
+                onMounted(init);
+                onUnmounted(() => { if (ws) ws.close(); });
+                
+                return {
+                    isLoggedIn, currentUser, currentView, loggingIn, loginError, loginForm,
+                    currentTime, stats, servers, players, filteredPlayers, voteHistory, tempBans,
+                    broadcastHistory, navItems, broadcastMessage, broadcastTarget, broadcastAsTitle,
+                    broadcasting, quickMessages, commandServerId, executeCommand, executing,
+                    commandOutput, commonCommands, playerOpName, playerOpServer, playerOpType,
+                    playerOpReason, playerOpMessage, muteDays, operating, unbanPlayerName,
+                    unbanning, config, newActionName, newReason, passwordForm, playerSearch,
+                    playerFilter, toast, confirm,
+                    handleLogin, logout, switchView, refreshServers, filterPlayers, getTpsColor,
+                    formatMemory, formatDate, getCreditColor, sendBroadcast, sendQuickBroadcast,
+                    executeServerCommand, fillCommand, setPlayerOpType, executePlayerOp,
+                    kickPlayer, banPlayer, viewPlayerDetail, loadTempBans, unbanFromServer,
+                    unbanPlayer, addAction, removeAction, addReason, removeReason, saveConfig,
+                    changePassword, viewServerDetail, viewServerPlayers, sendServerCommand, loadVoteHistory
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+plugins {
+    id 'java'
+}
+
+allprojects {
+    group = 'com.pcs'
+    version = '1.0.2'
+    
+    repositories {
+        // 阿里云镜像
+        maven { url 'https://maven.aliyun.com/repository/public/' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin/' }
+        maven { url 'https://maven.aliyun.com/repository/spring/' }
+        maven { url 'https://maven.aliyun.com/repository/spring-plugin/' }
+        // 中央仓库
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+    
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    
+    // 修复jar任务依赖关系 - 排除PCS-API自身
+    afterEvaluate {
+        if (project.name != 'PCS-API') {
+            tasks.withType(Jar) {
+                dependsOn ':PCS-API:jar'
+            }
+        }
+    }
+}

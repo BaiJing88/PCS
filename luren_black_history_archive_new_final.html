@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>卢某人的黑历史档案馆</title>
+<link href="https://image.uc.cn/s/uae/g/3n/mos-production/cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://image.uc.cn/s/uae/g/3n/mos-production/0915/3.4.17.js"></script>
+<style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+        
+        :root {
+            --theme-bg: #ffffff;
+            --theme-text: #000000;
+            --theme-card: #f5f5f7;
+            --theme-border: #d2d2d7;
+            --theme-accent: #007aff;
+            --theme-accent-hover: #0056cc;
+            --theme-shadow: rgba(0, 0, 0, 0.1);
+            --theme-overlay: rgba(0, 0, 0, 0.5);
+            --theme-modal-bg: #ffffff;
+            --theme-footer: #f5f5f7;
+        }
+        
+        .theme-dark {
+            --theme-bg: #000000;
+            --theme-text: #ffffff;
+            --theme-card: #1c1c1e;
+            --theme-border: #38383a;
+            --theme-accent: #0a84ff;
+            --theme-accent-hover: #409cff;
+            --theme-shadow: rgba(255, 255, 255, 0.1);
+            --theme-overlay: rgba(0, 0, 0, 0.7);
+            --theme-modal-bg: #1c1c1e;
+            --theme-footer: #000000;
+        }
+        
+        .theme-gray {
+            --theme-bg: #f2f2f7;
+            --theme-text: #1c1c1e;
+            --theme-card: #ffffff;
+            --theme-border: #c7c7cc;
+            --theme-accent: #007aff;
+            --theme-accent-hover: #0056cc;
+            --theme-shadow: rgba(0, 0, 0, 0.1);
+            --theme-overlay: rgba(0, 0, 0, 0.5);
+            --theme-modal-bg: #ffffff;
+            --theme-footer: #f2f2f7;
+        }
+        
+        .theme-contrast {
+            --theme-bg: #000000;
+            --theme-text: #ffffff;
+            --theme-card: #000000;
+            --theme-border: #ffffff;
+            --theme-accent: #ffffff;
+            --theme-accent-hover: #f0f0f0;
+            --theme-shadow: rgba(255, 255, 255, 0.2);
+            --theme-overlay: rgba(0, 0, 0, 0.8);
+            --theme-modal-bg: #000000;
+            --theme-footer: #000000;
+        }
+        
+        body {
+            background-color: var(--theme-bg);
+            color: var(--theme-text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .page-enter {
+            animation: pageEnter 0.4s ease-out;
+        }
+        
+        @keyframes pageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px var(--theme-shadow);
+        }
+        
+        .btn-hover {
+            transition: transform 0.2s ease, background-color 0.3s ease;
+        }
+        
+        .btn-hover:hover {
+            transform: scale(1.05);
+        }
+        
+        .btn-hover:active {
+            transform: scale(0.98);
+        }
+        
+        .fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: var(--theme-footer);
+            border-top: 1px solid var(--theme-border);
+            z-index: 50;
+        }
+        
+        .modal-overlay {
+            background-color: var(--theme-overlay);
+            backdrop-filter: blur(5px);
+        }
+        
+        .theme-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .theme-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 2px var(--theme-accent);
+        }
+        
+        .image-placeholder {
+            background: linear-gradient(135deg, var(--theme-border) 25%, transparent 25%, transparent 50%, var(--theme-border) 50%, var(--theme-border) 75%, transparent 75%, transparent);
+            background-size: 40px 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="root"></div>
+<!-- React & ReactDOM -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // 预设主题配置
+        const THEMES = [
+            { id: 'light', name: '纯白', className: '', icon: 'sun' },
+            { id: 'dark', name: '纯黑', className: 'theme-dark', icon: 'moon' },
+            { id: 'gray', name: '灰调', className: 'theme-gray', icon: 'cloud' },
+            { id: 'contrast', name: '高对比', className: 'theme-contrast', icon: 'adjust' }
+        ];
+
+        // 文章数据
+        const ARTICLES = [
+            {
+                id: 1,
+                title: "小学时期的那些糗事",
+                content: [
+                    "记得小学三年级的时候，有一次上课铃响了，我急匆匆地跑进教室，结果被门槛绊了一下，整个人直接扑倒在讲台前面。全班同学都笑了，连老师都忍不住转过头去偷笑。",
+                    "那是我第一次在那么多人面前出丑，感觉整个教室的目光都集中在我身上。我赶紧爬起来，脸上火辣辣的，低着头跑回座位。",
+                    "还有一次，学校组织春游，我带了妈妈做的便当。结果在车上颠簸的时候，便当盒盖子松了，饭菜洒了一书包。整个车厢都弥漫着红烧肉的味道，同学们都开玩笑说我是移动餐厅。"
+                ]
+            },
+            {
+                id: 2,
+                title: "初中初期的尴尬瞬间",
+                content: [
+                    "刚上初一的时候，总想给新同学留下好印象。有一次课间，我看见一个女生抱着很多书，就主动过去帮忙。",
+                    "结果没走几步，脚下一滑，书撒了一地。更尴尬的是，其中还有一本她的日记本，翻开的那页正好写着对某个男生的好感。",
+                    "她脸红得像苹果一样，我连忙道歉，手忙脚乱地捡书。从那以后，我们见面都会有点尴尬，虽然她后来跟我说没关系，但那个场景至今难忘。"
+                ]
+            },
+            {
+                id: 3,
+                title: "初三毕业前的最后疯狂",
+                content: [
+                    "初三下学期，学习压力越来越大，但我们几个好朋友还是找到了一些放松的方式。",
+                    "有一次模拟考试后，我们偷偷留在学校打篮球，结果被保安发现。我们慌不择路地翻墙逃跑，我的裤子被铁栏杆挂破了，只好捂着屁股跑回家。",
+                    "毕业典礼那天，我们约好要拍一张特别的合照。我负责带相机，结果忘记充电了，只能尴尬地用手机拍。照片虽然模糊，但那些笑脸至今还保存在我的相册里。"
+                ]
+            }
+        ];
+
+        // 事件数据
+        const EVENTS = [
+            {
+                id: 1,
+                title: "第一次逃课被抓",
+                date: "2018.03.15",
+                description: "尝试逃体育课去小卖部，结果被班主任当场抓获",
+                detail: "那天阳光很好，体育课要跑800米，我和同桌商量着溜去小卖部买冰棍。刚走到围墙边，就看到班主任站在那里等着我们。原来早有同学告密了..."
+            },
+            {
+                id: 2,
+                title: "给女生递纸条被公开",
+                date: "2019.05.20",
+                description: "鼓起勇气写的纸条，被调皮的同学抢走并当众朗读",
+                detail: "我花了整整两节自习课的时间，写了一张自以为很浪漫的纸条。结果在传递的过程中，被后座的调皮鬼抢走了。他不仅大声朗读，还添油加醋地模仿我的语气..."
+            },
+            {
+                id: 3,
+                title: "演讲比赛忘词",
+                date: "2019.09.10",
+                description: "在全校师生面前大脑一片空白，站着发呆一分钟",
+                detail: "教师节演讲比赛，我代表班级参赛。上台前把稿子背得滚瓜烂熟，但一看到台下黑压压的人群，脑子突然一片空白。我就那样站着，嘴巴张着却发不出声音..."
+            },
+            {
+                id: 4,
+                title: "恶作剧失败反被整",
+                date: "2020.01.08",
+                description: "想在同学椅子上涂胶水，结果涂错了自己的椅子",
+                detail: "本想给好朋友一个生日\"惊喜\"，趁他上厕所时在他椅子上涂了点胶水。没想到他回来时和我换了座位，我毫无防备地坐了下去...那天我是提着椅子回家的。"
+            },
+            {
+                id: 5,
+                title: "偷偷改成绩单被发现",
+                date: "2020.06.25",
+                description: "把59分改成89分，笔迹太明显被家长识破",
+                detail: "数学考了59分，怕被骂就试着改成89分。我用的是蓝色圆珠笔，成绩单是黑色印刷体。爸爸只看了一眼就说：'这89写得挺别致啊'..."
+            },
+            {
+                id: 6,
+                title: "毕业告白被发好人卡",
+                date: "2021.06.10",
+                description: "鼓起勇气在毕业那天告白，得到的回复是'你是个好人'",
+                detail: "准备了很久的告白，选在拍毕业照那天。我把她叫到学校的花坛边，紧张得手心出汗。她安静地听完，然后微笑着说：'谢谢你，你是个很好的人，但我们还是做朋友吧。'"
+            }
+        ];
+
+        // 公告模态框组件
+        function AnnouncementModal({ isOpen, onClose }) {
+            if (!isOpen) return null;
+
+            return ReactDOM.createPortal(
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" style={{ backgroundColor: 'var(--theme-modal-bg)', color: 'var(--theme-text)' }}>
+                        <div className="p-6">
+                            <div className="flex justify-center mb-4">
+                                <i className="fas fa-bell text-4xl" style={{ color: 'var(--theme-accent)' }}></i>
+                            </div>
+                            <h2 className="text-2xl font-bold text-center mb-4">重要公告</h2>
+                            <p className="text-lg mb-6 text-center">
+                                欢迎来到《卢某人的黑历史档案馆》，本站随时可能下线，请注意保存且看且珍惜！
+                            </p>
+                            <div className="flex justify-center">
+                                <button 
+                                    onClick={onClose}
+                                    className="px-8 py-3 rounded-xl font-semibold btn-hover"
+                                    style={{ 
+                                        backgroundColor: 'var(--theme-accent)', 
+                                        color: 'white'
+                                    }}
+                                >
+                                    继续进入
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 text-center text-sm opacity-70 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+                            <i className="fas fa-exclamation-triangle mr-2"></i>
+                            本站内容随时可能消失，请及时保存
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            );
+        }
+
+        // 图片占位组件
+        function ImagePlaceholder() {
+            return (
+                <div className="my-8 rounded-xl overflow-hidden image-placeholder">
+                    <div className="h-64 flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--theme-card)' }}>
+                        <i className="fas fa-image text-5xl mb-4" style={{ color: 'var(--theme-border)' }}></i>
+                        <p className="font-medium" style={{ color: 'var(--theme-text)' }}>图片占位区域</p>
+                        <p className="text-sm mt-1 opacity-70">后期将替换为真实图片</p>
+                    </div>
+                    <div className="p-3 text-center text-sm" style={{ backgroundColor: 'var(--theme-card)', color: 'var(--theme-text)', borderTop: `1px dashed var(--theme-border)` }}>
+                        此处可插入与上下文相关的图片
+                    </div>
+                </div>
+            );
+        }
+
+        // 主题切换器组件
+        function ThemeSwitcher({ currentTheme, onChangeTheme }) {
+            return (
+                <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium hidden md:inline" style={{ color: 'var(--theme-text)' }}>主题:</span>
+                    <div className="flex space-x-1">
+                        {THEMES.map(theme => (
+                            <button
+                                key={theme.id}
+                                onClick={() => onChangeTheme(theme.id)}
+                                className={`theme-btn w-10 h-10 rounded-full flex items-center justify-center ${currentTheme === theme.id ? 'active' : ''}`}
+                                style={{ 
+                                    backgroundColor: currentTheme === theme.id ? 'var(--theme-accent)' : 'var(--theme-card)',
+                                    color: currentTheme === theme.id ? 'white' : 'var(--theme-text)',
+                                    border: `1px solid var(--theme-border)`
+                                }}
+                                title={theme.name}
+                            >
+                                <i className={`fas fa-${theme.icon}`}></i>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // 主页组件
+        function HomePage({ onNavigate }) {
+            return (
+                <div className="min-h-screen pt-8 pb-24 page-enter">
+                    <div className="container">
+                        {/* 标题区域 */}
+                        <div className="text-center mb-12">
+                            <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-tight" style={{ color: 'var(--theme-text)' }}>
+                                卢某人的黑历史档案馆
+                            </h1>
+                            <p className="text-xl md:text-2xl opacity-80" style={{ color: 'var(--theme-text)' }}>
+                                从小学截止至初三毕业，且看且珍惜！
+                            </p>
+                            <div className="h-1 w-24 mx-auto mt-6 rounded-full" style={{ backgroundColor: 'var(--theme-accent)' }}></div>
+                        </div>
+
+                        {/* 文章按钮区域 */}
+                        <div className="mb-16">
+                            <h2 className="text-2xl font-bold mb-6 text-center" style={{ color: 'var(--theme-text)' }}>
+                                <i className="fas fa-book-open mr-3"></i>
+                                精选文章
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {ARTICLES.map(article => (
+                                    <button
+                                        key={article.id}
+                                        onClick={() => onNavigate('article', article.id)}
+                                        className="p-6 rounded-2xl text-left card-hover btn-hover"
+                                        style={{ 
+                                            backgroundColor: 'var(--theme-card)',
+                                            border: `1px solid var(--theme-border)`,
+                                            color: 'var(--theme-text)'
+                                        }}
+                                    >
+                                        <div className="text-4xl font-bold mb-4 opacity-30">0{article.id}</div>
+                                        <h3 className="text-xl font-bold mb-3">{article.title}</h3>
+                                        <p className="opacity-70 mb-4">点击阅读完整内容...</p>
+                                        <div className="flex items-center text-sm font-medium" style={{ color: 'var(--theme-accent)' }}>
+                                            阅读文章 <i className="fas fa-arrow-right ml-2"></i>
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 查看更多事件按钮 */}
+                        <div className="text-center">
+                            <button
+                                onClick={() => onNavigate('events')}
+                                className="px-10 py-5 rounded-2xl font-bold text-lg btn-hover relative overflow-hidden"
+                                style={{ 
+                                    backgroundColor: 'var(--theme-accent)',
+                                    color: 'white',
+                                    boxShadow: '0 10px 30px var(--theme-shadow)'
+                                }}
+                            >
+                                <span className="relative z-10">查看更多事件</span>
+                                <div className="absolute inset-0 opacity-20" style={{ 
+                                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                                    animation: 'shimmer 2s infinite'
+                                }}></div>
+                                <style>{`
+                                    @keyframes shimmer {
+                                        0% { transform: translateX(-100%); }
+                                        100% { transform: translateX(100%); }
+                                    }
+                                `}</style>
+                            </button>
+                            <p className="mt-4 opacity-70" style={{ color: 'var(--theme-text)' }}>
+                                收录了{EVENTS.length}个经典尴尬瞬间
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 文章页面组件
+        function ArticlePage({ articleId, onBack }) {
+            const article = ARTICLES.find(a => a.id === articleId);
+            
+            if (!article) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold mb-4">文章不存在</h2>
+                            <button onClick={() => onBack()} className="px-6 py-3 rounded-xl font-medium" style={{ backgroundColor: 'var(--theme-accent)', color: 'white' }}>
+                                返回首页
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pt-8 pb-24 page-enter">
+                    <div className="container max-w-3xl">
+                        {/* 返回按钮 */}
+                        <button 
+                            onClick={() => onBack()}
+                            className="mb-8 flex items-center px-4 py-2 rounded-xl font-medium"
+                            style={{ 
+                                backgroundColor: 'var(--theme-card)',
+                                color: 'var(--theme-text)',
+                                border: `1px solid var(--theme-border)`
+                            }}
+                        >
+                            <i className="fas fa-arrow-left mr-2"></i> 返回
+                        </button>
+
+                        {/* 文章标题 */}
+                        <h1 className="text-4xl md:text-5xl font-bold mb-6" style={{ color: 'var(--theme-text)' }}>
+                            {article.title}
+                        </h1>
+                        
+                        {/* 文章内容 */}
+                        <div className="space-y-8">
+                            {article.content.map((paragraph, index) => (
+                                <React.Fragment key={index}>
+                                    <p className="text-lg leading-relaxed" style={{ color: 'var(--theme-text)' }}>
+                                        {paragraph}
+                                    </p>
+                                    {/* 在第一段和第二段之间插入图片占位符 */}
+                                    {index === 0 && <ImagePlaceholder />}
+                                    {/* 在第二段和第三段之间再插入一个图片占位符 */}
+                                    {index === 1 && article.content.length > 2 && <ImagePlaceholder />}
+                                </React.Fragment>
+                            ))}
+                        </div>
+
+                        {/* 文章元信息 */}
+                        <div className="mt-12 pt-6 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+                            <div className="flex justify-between items-center">
+                                <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>
+                                    <i className="fas fa-calendar-alt mr-2"></i>
+                                    最后更新: 2025.03.15
+                                </div>
+                                <button 
+                                    onClick={() => onBack()}
+                                    className="px-6 py-2 rounded-xl font-medium"
+                                    style={{ 
+                                        backgroundColor: 'var(--theme-card)',
+                                        color: 'var(--theme-text)',
+                                        border: `1px solid var(--theme-border)`
+                                    }}
+                                >
+                                    <i className="fas fa-home mr-2"></i> 返回首页
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 事件列表页面
+        function EventsPage({ onNavigate, onBack }) {
+            return (
+                <div className="min-h-screen pt-8 pb-24 page-enter">
+                    <div className="container">
+                        {/* 返回按钮 */}
+                        <button 
+                            onClick={() => onBack()}
+                            className="mb-8 flex items-center px-4 py-2 rounded-xl font-medium"
+                            style={{ 
+                                backgroundColor: 'var(--theme-card)',
+                                color: 'var(--theme-text)',
+                                border: `1px solid var(--theme-border)`
+                            }}
+                        >
+                            <i className="fas fa-arrow-left mr-2"></i> 返回
+                        </button>
+
+                        {/* 页面标题 */}
+                        <div className="mb-10">
+                            <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: 'var(--theme-text)' }}>
+                                黑历史事件簿
+                            </h1>
+                            <p className="text-xl opacity-80" style={{ color: 'var(--theme-text)' }}>
+                                共收录{EVENTS.length}个尴尬瞬间，按时间顺序排列
+                            </p>
+                        </div>
+
+                        {/* 事件卡片网格 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {EVENTS.map(event => (
+                                <button
+                                    key={event.id}
+                                    onClick={() => onNavigate('eventDetail', event.id)}
+                                    className="p-6 rounded-2xl text-left card-hover btn-hover h-full"
+                                    style={{ 
+                                        backgroundColor: 'var(--theme-card)',
+                                        border: `1px solid var(--theme-border)`,
+                                        color: 'var(--theme-text)'
+                                    }}
+                                >
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="text-3xl font-bold opacity-30">#{String(event.id).padStart(2, '0')}</div>
+                                        <span className="text-sm font-medium px-3 py-1 rounded-full" style={{ 
+                                            backgroundColor: 'var(--theme-border)',
+                                            color: 'var(--theme-text)'
+                                        }}>
+                                            {event.date}
+                                        </span>
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-3">{event.title}</h3>
+                                    <p className="opacity-70 mb-6">{event.description}</p>
+                                    <div className="flex items-center text-sm font-medium" style={{ color: 'var(--theme-accent)' }}>
+                                        查看详情 <i className="fas fa-chevron-right ml-2"></i>
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 统计信息 */}
+                        <div className="mt-12 p-6 rounded-2xl text-center" style={{ 
+                            backgroundColor: 'var(--theme-card)',
+                            border: `1px solid var(--theme-border)`
+                        }}>
+                            <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--theme-text)' }}>档案馆统计</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                    <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>{EVENTS.length}</div>
+                                    <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>收录事件</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>{ARTICLES.length}</div>
+                                    <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>精选文章</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>2015</div>
+                                    <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>起始年份</div>
+                                </div>
+                                <div>
+                                    <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>2021</div>
+                                    <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>截止年份</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 事件详情页面
+        function EventDetailPage({ eventId, onBack }) {
+            const event = EVENTS.find(e => e.id === eventId);
+            
+            if (!event) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center">
+                        <div className="text-center">
+                            <h2 className="text-2xl font-bold mb-4">事件不存在</h2>
+                            <button onClick={() => onBack()} className="px-6 py-3 rounded-xl font-medium" style={{ backgroundColor: 'var(--theme-accent)', color: 'white' }}>
+                                返回事件列表
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen pt-8 pb-24 page-enter">
+                    <div className="container max-w-3xl">
+                        {/* 返回按钮 */}
+                        <button 
+                            onClick={() => onBack()}
+                            className="mb-8 flex items-center px-4 py-2 rounded-xl font-medium"
+                            style={{ 
+                                backgroundColor: 'var(--theme-card)',
+                                color: 'var(--theme-text)',
+                                border: `1px solid var(--theme-border)`
+                            }}
+                        >
+                            <i className="fas fa-arrow-left mr-2"></i> 返回
+                        </button>
+
+                        {/* 事件标题 */}
+                        <div className="mb-6">
+                            <span className="inline-block px-4 py-1 rounded-full text-sm font-medium mb-4" style={{ 
+                                backgroundColor: 'var(--theme-border)',
+                                color: 'var(--theme-text)'
+                            }}>
+                                {event.date}
+                            </span>
+                            <h1 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: 'var(--theme-text)' }}>
+                                {event.title}
+                            </h1>
+                            <p className="text-xl opacity-80" style={{ color: 'var(--theme-text)' }}>
+                                {event.description}
+                            </p>
+                        </div>
+
+                        {/* 事件详情 */}
+                        <div className="p-8 rounded-2xl mb-8" style={{ 
+                            backgroundColor: 'var(--theme-card)',
+                            border: `1px solid var(--theme-border)`
+                        }}>
+                            <p className="text-lg leading-relaxed" style={{ color: 'var(--theme-text)' }}>
+                                {event.detail}
+                            </p>
+                        </div>
+
+                        {/* 图片占位符 */}
+                        <ImagePlaceholder />
+
+                        {/* 导航按钮 */}
+                        <div className="flex justify-between mt-12">
+                            <button 
+                                onClick={() => onBack()}
+                                className="px-6 py-3 rounded-xl font-medium"
+                                style={{ 
+                                    backgroundColor: 'var(--theme-card)',
+                                    color: 'var(--theme-text)',
+                                    border: `1px solid var(--theme-border)`
+                                }}
+                            >
+                                <i className="fas fa-list mr-2"></i> 返回事件列表
+                            </button>
+                            <button 
+                                onClick={() => onBack('home')}
+                                className="px-6 py-3 rounded-xl font-medium"
+                                style={{ 
+                                    backgroundColor: 'var(--theme-accent)',
+                                    color: 'white'
+                                }}
+                            >
+                                <i className="fas fa-home mr-2"></i> 返回首页
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // 固定页脚组件
+        function Footer() {
+            return (
+                <footer className="fixed-footer">
+                    <div className="container">
+                        <div className="py-4 flex justify-between items-center">
+                            <div style={{ color: 'var(--theme-text)' }}>
+                                BaiJing © 2026
+                            </div>
+                            <div className="text-sm opacity-70" style={{ color: 'var(--theme-text)' }}>
+                                <i className="fas fa-heart mr-1" style={{ color: '#ff375f' }}></i>
+                                黑历史档案馆 v1.0
+                            </div>
+                        </div>
+                    </div>
+                </footer>
+            );
+        }
+
+        // 主应用组件
+        function App() {
+            const [currentView, setCurrentView] = useState('home');
+            const [currentArticle, setCurrentArticle] = useState(null);
+            const [currentEvent, setCurrentEvent] = useState(null);
+            const [isModalOpen, setIsModalOpen] = useState(true);
+            const [currentTheme, setCurrentTheme] = useState('light');
+
+            // 初始化主题
+            useEffect(() => {
+                const savedTheme = localStorage.getItem('blackHistoryTheme');
+                if (savedTheme && THEMES.some(t => t.id === savedTheme)) {
+                    setCurrentTheme(savedTheme);
+                }
+            }, []);
+
+            // 应用主题到body
+            useEffect(() => {
+                // 移除所有主题类
+                THEMES.forEach(theme => {
+                    document.body.classList.remove(theme.className);
+                });
+                
+                // 添加当前主题类
+                const themeConfig = THEMES.find(t => t.id === currentTheme);
+                if (themeConfig && themeConfig.className) {
+                    document.body.classList.add(themeConfig.className);
+                }
+                
+                // 保存到localStorage
+                localStorage.setItem('blackHistoryTheme', currentTheme);
+            }, [currentTheme]);
+
+            // 处理导航
+            const handleNavigate = (view, id = null) => {
+                // 滚动到顶部
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                if (view === 'article') {
+                    setCurrentArticle(id);
+                    setCurrentView('article');
+                } else if (view === 'eventDetail') {
+                    setCurrentEvent(id);
+                    setCurrentView('eventDetail');
+                } else {
+                    setCurrentView(view);
+                }
+            };
+
+            // 处理返回
+            const handleBack = (target = null) => {
+                if (target === 'home') {
+                    setCurrentView('home');
+                } else if (currentView === 'article' || currentView === 'eventDetail') {
+                    setCurrentView(currentView === 'article' ? 'home' : 'events');
+                }
+            };
+
+            // 切换主题
+            const changeTheme = () => {
+                const currentIndex = THEMES.findIndex(t => t.id === currentTheme);
+                const nextIndex = (currentIndex + 1) % THEMES.length;
+                setCurrentTheme(THEMES[nextIndex].id);
+            };
+
+            // 渲染当前视图
+            const renderView = () => {
+                switch (currentView) {
+                    case 'home':
+                        return <HomePage onNavigate={handleNavigate} />;
+                    case 'article':
+                        return <ArticlePage articleId={currentArticle} onBack={handleBack} />;
+                    case 'events':
+                        return <EventsPage onNavigate={handleNavigate} onBack={handleBack} />;
+                    case 'eventDetail':
+                        return <EventDetailPage eventId={currentEvent} onBack={handleBack} />;
+                    default:
+                        return <HomePage onNavigate={handleNavigate} />;
+                }
+            };
+
+            return (
+                <div>
+                    {/* 公告模态框 */}
+                    <AnnouncementModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+                    
+                    {/* 顶部导航栏 */}
+                    <header className="sticky top-0 z-40 py-4" style={{ 
+                        backgroundColor: 'var(--theme-bg)',
+                        borderBottom: `1px solid var(--theme-border)`,
+                        backdropFilter: 'blur(10px)'
+                    }}>
+                        <div className="container">
+                            <div className="flex justify-between items-center">
+                                <button 
+                                    onClick={() => handleNavigate('home')}
+                                    className="flex items-center space-x-2 font-bold text-xl"
+                                    style={{ color: 'var(--theme-text)' }}
+                                >
+                                    <i className="fas fa-archive"></i>
+                                    <span className="hidden md:inline">黑历史档案馆</span>
+                                </button>
+                                
+                                <div className="flex items-center space-x-4">
+                                    <ThemeSwitcher currentTheme={currentTheme} onChangeTheme={setCurrentTheme} />
+                                    
+                                    <button 
+                                        onClick={changeTheme}
+                                        className="md:hidden w-10 h-10 rounded-full flex items-center justify-center"
+                                        style={{ 
+                                            backgroundColor: 'var(--theme-card)',
+                                            color: 'var(--theme-text)',
+                                            border: `1px solid var(--theme-border)`
+                                        }}
+                                        title="切换主题"
+                                    >
+                                        <i className="fas fa-palette"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    {/* 主内容区 */}
+                    {renderView()}
+                    
+                    {/* 固定页脚 */}
+                    <Footer />
+                </div>
+            );
+        }
+
+        // 渲染React应用
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

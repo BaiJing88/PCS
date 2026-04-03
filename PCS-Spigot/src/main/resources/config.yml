@@ -1,0 +1,62 @@
+# =============================================
+# Player Credit System - Spigot Client Config
+# =============================================
+
+# 【重要】服务器标识由中控在首次连接时分配
+# 首次启动时可以不配置server.id，或保留默认值
+# 认证成功后，中控会分配唯一ID并自动保存到此配置文件
+
+# 服务器配置
+server:
+  # 服务器唯一标识（首次连接时由中控分配，会自动保存）
+  # 请勿手动修改此值，否则会导致数据丢失！
+  id: ""
+  
+  # 服务器显示名称（可修改，仅用于展示，首次使用需配置此项）
+  name: "Minecraft Server"
+  
+  # 服务器类型（SPIGOT/PAPER/FORGE/FABRIC/NEOFORGE等等）
+  type: "SPIGOT"
+
+# 中控服务器连接配置
+controller:
+  # WebSocket连接地址
+  host: "localhost"
+  port: 8080
+  
+  # 是否使用SSL/WSS
+  use-ssl: false
+  
+  # 连接密钥（从中央控制器管理员处获取）
+  # 此密钥用于验证服务器身份，与服务器ID绑定（若您不清楚此项的作用，切勿修改！！！）
+  api-key: "a354rgas35er4gaerg354adfhjr"
+  
+  # 自动重连间隔（秒）
+  reconnect-interval: 30
+  
+  # 心跳间隔（秒）
+  heartbeat-interval: 30
+
+# 投票系统本地配置
+# 【注意】投票功能必须开启，其他配置项（持续时间、通过率等）从中控服务器获取
+vote:
+  # 【重要】管理员是否免疫投票（不能被投票）
+  admin-immune: true
+  # 哪些权限被视为管理员（拥有以下任一权限的玩家不能被投票）
+  admin-permissions:
+    - "pcs.admin"
+    - "pcs.vote.immune"
+
+# 数据库配置（本地缓存）
+database:
+  # 存储类型: SQLITE, MYSQL
+  type: SQLITE
+  sqlite:
+    file: "pcs_data.db"
+  mysql:
+    host: localhost
+    port: 3306
+    database: pcs
+    username: pcs
+    password: password
+

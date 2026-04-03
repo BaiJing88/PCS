@@ -1,0 +1,63 @@
+name: PCS-Spigot
+version: 1.0.0
+main: com.pcs.spigot.PCSSpigotPlugin
+api-version: '1.21'
+author: Bai_Jing88(QQ1782307393)
+description: Player Credit System - Spigot Client for Minecraft 1.21+
+
+commands:
+  pcs:
+    description: Player Credit System main command
+    usage: /pcs [action] [player] [reason]
+    aliases: [playercredit, creditsystem]
+    permission: pcs.use
+  pcsadmin:
+    description: PCS Admin commands
+    usage: /pcsadmin <subcommand>
+    aliases: [pcsa]
+    permission: pcs.admin
+  credit:
+    description: Query player credit information
+    usage: /credit [player]
+    aliases: [credits, reputation]
+    permission: pcs.credit.query
+  rate:
+    description: Rate a player
+    usage: /rate <player> <score> [comment]
+    permission: pcs.rate
+  vote:
+    description: Vote in active votes
+    usage: /vote yes|no <voteId> or /vote list
+    permission: pcs.vote.participate
+
+permissions:
+  pcs.use:
+    description: Allows use of /pcs command
+    default: true
+  pcs.admin:
+    description: Allows use of admin commands
+    default: op
+  pcs.credit.query:
+    description: Allows querying player credit
+    default: true
+  pcs.credit.query.others:
+    description: Allows querying other players' credit
+    default: true
+  pcs.rate:
+    description: Allows rating players
+    default: true
+  pcs.vote.start:
+    description: Allows starting votes
+    default: true
+  pcs.vote.participate:
+    description: Allows participating in votes
+    default: true
+  pcs.ban.sync:
+    description: Allows receiving ban sync notifications
+    default: op
+  pcs.unban:
+    description: Allows unbanning players
+    default: op
+  pcs.bypass.chatlimit:
+    description: Allows bypassing vote chat rate limit
+    default: op

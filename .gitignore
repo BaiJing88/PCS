@@ -1,0 +1,59 @@
+# Build outputs
+build/
+.gradle/
+*/build/
+out/
+bin/
+
+# JAR files
+*.jar
+*.war
+*.ear
+
+# Logs
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime data
+data/
+*.db
+*.mv.db
+*.trace.db
+
+# Test server (local dev)
+test-server/
+*.mca
+*.dat_old
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+~*
+
+# Config with sensitive info (keep template)
+# config/*.yml.example
+
+# Minecraft specific (generated at runtime)
+*.srg
+eula.txt
+ops.json
+whitelist.json
+banned-players.json
+banned-ips.json
+usercache.json
+world_nether/
+world_the_end/
+cache/

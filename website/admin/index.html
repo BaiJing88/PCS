@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCS 中控管理系统</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.cn/">
+    <link href="https://fonts.googleapis.cn/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        primary: { 500: '#6366f1', 600: '#4f46e5' },
+                        success: '#10b981',
+                        warning: '#f59e0b',
+                        danger: '#ef4444',
+                        info: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a24;
+            --border: #2a2a3a;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+        }
+        
+        .light {
+            --bg-dark: #f8fafc;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f1f5f9;
+            --border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        /* Card Styles */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Button Styles */
+        .btn {
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn:hover { transform: translateY(-1px); }
+        .btn-primary { background: linear-gradient(135deg, #6366f1, #4f46e5); color: white; }
+        .btn-primary:hover { box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+        .btn-success { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+        .btn-outline:hover { border-color: #6366f1; color: #6366f1; }
+        
+        /* Form Styles */
+        .input, .select, .textarea {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: var(--text-primary);
+            width: 100%;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .input:focus, .select:focus, .textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px 16px;
+            overflow-y: auto;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            margin-bottom: 4px;
+            transition: all 0.2s;
+        }
+        .sidebar-item:hover {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(99,102,241,0.1));
+            color: #6366f1;
+        }
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 3px;
+            height: 24px;
+            background: #6366f1;
+            border-radius: 0 3px 3px 0;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 260px;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+        }
+        
+        /* Stat Cards */
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+        }
+        
+        /* Badges */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .badge-online { background: rgba(16,185,129,0.15); color: #10b981; }
+        .badge-offline { background: rgba(136,136,160,0.15); color: var(--text-secondary); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: #f59e0b; }
+        .badge-danger { background: rgba(239,68,68,0.15); color: #ef4444; }
+        
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th {
+            background: var(--bg-dark);
+            padding: 14px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 11px;
+            border-bottom: 1px solid var(--border);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .table td {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .table tr:hover td { background: var(--bg-card-hover); }
+        .table tr:last-child td { border-bottom: none; }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: scale(0.9) translateY(20px);
+            transition: all 0.3s;
+        }
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            height: 6px;
+            background: var(--bg-dark);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+        
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            min-width: 180px;
+            z-index: 100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+        }
+        .dropdown.active .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+        }
+        .dropdown-item:hover { background: var(--bg-dark); }
+        .dropdown-item:first-child { border-radius: 10px 10px 0 0; }
+        .dropdown-item:last-child { border-radius: 0 0 10px 10px; }
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 6px 0;
+        }
+        
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast.success { border-left: 3px solid #10b981; }
+        .toast.error { border-left: 3px solid #ef4444; }
+        .toast.warning { border-left: 3px solid #f59e0b; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Mobile Overlay -->
+        <div v-if="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/50 z-50 lg:hidden"></div>
+        
+        <!-- Sidebar -->
+        <aside :class="['sidebar', sidebarOpen ? 'open' : '']">
+            <div class="flex items-center gap-3 mb-8 pb-4 border-b border-[var(--border)]">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center animate-pulse-glow">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <div class="font-bold">PCS 中控</div>
+                    <div class="text-xs text-gray-500">v{{ version }}</div>
+                </div>
+            </div>
+            
+            <nav class="space-y-1">
+                <div v-for="item in navItems" :key="item.id" 
+                     @click="currentView = item.id; sidebarOpen = false"
+                     :class="['sidebar-item relative', { active: currentView === item.id }]">
+                    <i :data-lucide="item.icon" class="w-4 h-4"></i>
+                    <span>{{ item.name }}</span>
+                    <span v-if="item.badge" :class="['badge ml-auto', item.badgeClass]">{{ item.badge }}</span>
+                </div>
+            </nav>
+            
+            <div class="absolute bottom-4 left-4 right-4">
+                <div class="card p-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold">
+                            {{ user.name.charAt(0) }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-sm truncate">{{ user.name }}</div>
+                            <div class="text-xs text-gray-500">{{ user.role }}</div>
+                        </div>
+                        <button @click="logout" class="p-2 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors" title="退出登录">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-4">
+                    <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)]">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h1 class="text-xl font-bold">{{ currentNavItem?.name }}</h1>
+                        <p class="text-sm text-gray-500">{{ currentNavItem?.desc }}</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Search -->
+                    <div class="relative hidden md:block">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                        <input v-model="globalSearch" type="text" placeholder="全局搜索..." class="input pl-10 w-64">
+                    </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button @click="toggleTheme" class="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-primary-500 transition-colors">
+                        <i v-if="isDark" data-lucide="sun" class="w-4 h-4 text-yellow-400"></i>
+                        <i v-else data-lucide="moon" class="w-4 h-4"></i>
+                    </button>
+                    
+                    <!-- Notifications -->
+                    <div class="dropdown" :class="{ active: notifOpen }" @click.outside="notifOpen = false">
+                        <button @click="notifOpen = !notifOpen" class="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] hover:border-primary-500 transition-colors relative">
+                            <i data-lucide="bell" class="w-4 h-4"></i>
+                            <span v-if="unreadCount > 0" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">{{ unreadCount }}</span>
+                        </button>
+                        <div class="dropdown-menu w-80">
+                            <div class="p-3 border-b border-[var(--border)] font-medium">通知</div>
+                            <div class="max-h-64 overflow-y-auto">
+                                <div v-for="notif in notifications" :key="notif.id" 
+                                     class="dropdown-item py-3" :class="{ 'bg-primary-500/5': !notif.read }">
+                                    <div class="flex-1">
+                                        <div class="text-sm">{{ notif.title }}</div>
+                                        <div class="text-xs text-gray-500">{{ notif.time }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Refresh -->
+                    <button @click="refreshData" :disabled="refreshing" class="btn btn-outline">
+                        <i data-lucide="refresh-cw" :class="['w-4 h-4', refreshing ? 'animate-spin' : '']"></i>
+                        <span class="hidden sm:inline">刷新</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <div v-if="currentView === 'dashboard'" class="animate-fade-in space-y-6">
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div v-for="stat in stats" :key="stat.label" class="stat-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <div :class="['w-10 h-10 rounded-lg flex items-center justify-center', stat.bgClass]">
+                                <i :data-lucide="stat.icon" :class="['w-5 h-5', stat.iconClass]"></i>
+                            </div>
+                            <span :class="['badge', stat.badgeClass]">{{ stat.status }}</span>
+                        </div>
+                        <div class="text-2xl font-bold mb-1">{{ stat.value }}</div>
+                        <div class="text-sm text-gray-500">{{ stat.label }}</div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold">在线玩家趋势</h3>
+                            <select v-model="chartPeriod" class="select w-32">
+                                <option value="24h">24小时</option>
+                                <option value="7d">7天</option>
+                                <option value="30d">30天</option>
+                            </select>
+                        </div>
+                        <canvas id="playerChart" height="200"></canvas>
+                    </div>
+                    <div class="card p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold">服务器负载</h3>
+                            <span class="text-sm text-gray-500">实时</span>
+                        </div>
+                        <canvas id="serverChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Server Status -->
+                <div class="card">
+                    <div class="p-4 border-b border-[var(--border)] flex items-center justify-between">
+                        <h3 class="font-bold">服务器状态</h3>
+                        <button @click="showAddServerModal" class="btn btn-primary btn-sm">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            添加服务器
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>服务器</th>
+                                    <th>类型</th>
+                                    <th>状态</th>
+                                    <th>玩家</th>
+                                    <th>TPS</th>
+                                    <th>内存</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="server in servers" :key="server.id">
+                                    <td>
+                                        <div class="flex items-center gap-3">
+                                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                                <i data-lucide="server" class="w-4 h-4 text-white"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-medium">{{ server.name }}</div>
+                                                <div class="text-xs text-gray-500 font-mono">{{ server.id }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-gray-500/10">{{ server.type }}</span></td>
+                                    <td>
+                                        <span :class="['badge', server.online ? 'badge-online' : 'badge-offline']">
+                                            {{ server.online ? '在线' : '离线' }}
+                                        </span>
+                                    </td>
+                                    <td>{{ server.playerCount }}/{{ server.maxPlayers }}</td>
+                                    <td>
+                                        <span :class="['font-medium', server.tps >= 18 ? 'text-green-400' : server.tps >= 15 ? 'text-yellow-400' : 'text-red-400']">
+                                            {{ server.tps?.toFixed(1) || '-' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="flex items-center gap-2">
+                                            <div class="progress-bar w-20">
+                                                <div class="progress-fill" :style="{width: (server.memoryUsed/server.memoryMax*100)+'%', background: server.memoryUsed/server.memoryMax>0.8?'#ef4444':server.memoryUsed/server.memoryMax>0.5?'#f59e0b':'#10b981'}"></div>
+                                            </div>
+                                            <span class="text-xs">{{ Math.round(server.memoryUsed/server.memoryMax*100) }}%</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="flex gap-2">
+                                            <button @click="viewServer(server)" class="btn btn-outline btn-sm">详情</button>
+                                            <button @click="openCommandModal(server)" class="btn btn-primary btn-sm">命令</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Players View -->
+            <div v-if="currentView === 'players'" class="animate-fade-in space-y-6">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div class="flex gap-3">
+                        <div class="relative">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                            <input v-model="playerSearch" type="text" placeholder="搜索玩家..." class="input pl-10 w-64">
+                        </div>
+                        <select v-model="playerFilter" class="select w-40">
+                            <option value="">全部状态</option>
+                            <option value="online">在线</option>
+                            <option value="offline">离线</option>
+                            <option value="banned">已封禁</option>
+                            <option value="muted">禁言中</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2">
+                        <button @click="exportPlayers" class="btn btn-outline">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            导出
+                        </button>
+                        <button @click="showBatchModal" class="btn btn-warning">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                            批量操作
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card overflow-hidden">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>玩家</th>
+                                <th>信用分</th>
+                                <th>状态</th>
+                                <th>封禁/踢出</th>
+                                <th>标签</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="player in filteredPlayers" :key="player.uuid">
+                                <td>
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold">
+                                            {{ player.name.charAt(0).toUpperCase() }}
+                                        </div>
+                                        <div>
+                                            <div class="font-medium">{{ player.name }}</div>
+                                            <div class="text-xs text-gray-500 font-mono">{{ player.uuid.substring(0,8) }}...</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-16 progress-bar">
+                                            <div class="progress-fill" :style="{width: player.creditScore*10+'%', background: player.creditScore>=8?'#10b981':player.creditScore>=5?'#f59e0b':'#ef4444'}"></div>
+                                        </div>
+                                        <span :class="['font-bold', player.creditScore>=8?'text-green-400':player.creditScore>=5?'text-yellow-400':'text-red-400']">
+                                            {{ player.creditScore.toFixed(1) }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="flex flex-col gap-1">
+                                        <span :class="['badge', player.online ? 'badge-online' : 'badge-offline']">
+                                            {{ player.online ? '在线' : '离线' }}
+                                        </span>
+                                        <span v-if="player.muted" class="badge badge-warning">禁言中</span>
+                                    </div>
+                                </td>
+                                <td>{{ player.totalBans }} / {{ player.totalKicks }}</td>
+                                <td>
+                                    <div class="flex gap-1 flex-wrap">
+                                        <span v-if="player.cheaterTag" class="badge badge-danger">外挂</span>
+                                        <span v-if="player.currentlyBanned" class="badge badge-danger">已封禁</span>
+                                        <span v-if="player.tempBanned" class="badge badge-warning">临时封禁</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="dropdown" :class="{ active: activeDropdown === player.uuid }" @click.outside="activeDropdown = null">
+                                        <button @click="activeDropdown = activeDropdown === player.uuid ? null : player.uuid" class="btn btn-outline btn-sm">
+                                            操作 <i data-lucide="chevron-down" class="w-3 h-3"></i>
+                                        </button>
+                                        <div class="dropdown-menu">
+                                            <div class="dropdown-item" @click="viewPlayer(player)">
+                                                <i data-lucide="eye" class="w-4 h-4"></i>查看详情
+                                            </div>
+                                            <div class="dropdown-item" @click="openRateModal(player)">
+                                                <i data-lucide="star" class="w-4 h-4"></i>评分
+                                            </div>
+                                            <div class="dropdown-divider"></div>
+                                            <div class="dropdown-item text-yellow-400" @click="openVoteModal(player, 'kick')">
+                                                <i data-lucide="log-out" class="w-4 h-4"></i>发起踢出投票
+                                            </div>
+                                            <div class="dropdown-item text-yellow-400" @click="openVoteModal(player, 'ban')">
+                                                <i data-lucide="ban" class="w-4 h-4"></i>发起封禁投票
+                                            </div>
+                                            <div class="dropdown-item text-yellow-400" @click="openVoteModal(player, 'mute')">
+                                                <i data-lucide="volume-x" class="w-4 h-4"></i>发起禁言投票
+                                            </div>
+                                            <div class="dropdown-divider"></div>
+                                            <div class="dropdown-item text-red-400" @click="kickPlayer(player)">
+                                                <i data-lucide="user-x" class="w-4 h-4"></i>立即踢出
+                                            </div>
+                                            <div class="dropdown-item text-red-400" @click="openBanModal(player)">
+                                                <i data-lucide="ban" class="w-4 h-4"></i>永久封禁
+                                            </div>
+                                            <div v-if="player.currentlyBanned" class="dropdown-item text-green-400" @click="unbanPlayer(player)">
+                                                <i data-lucide="unlock" class="w-4 h-4"></i>解封
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Other views placeholder -->
+            <div v-else class="animate-fade-in">
+                <div class="card p-12 text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-primary-500/10 flex items-center justify-center">
+                        <i data-lucide="construction" class="w-8 h-8 text-primary-500"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">{{ currentNavItem?.name }}</h3>
+                    <p class="text-gray-500">该功能模块正在开发中...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modals -->
+        <!-- Server Detail Modal -->
+        <div v-if="showServerModal" class="modal-overlay active" @click.self="showServerModal = false">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold">服务器详情</h3>
+                    <button @click="showServerModal = false" class="p-1 rounded-lg hover:bg-gray-500/10">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div v-if="selectedServer" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="card p-4">
+                            <div class="text-sm text-gray-500 mb-1">服务器名称</div>
+                            <div class="font-medium">{{ selectedServer.name }}</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-sm text-gray-500 mb-1">服务器ID</div>
+                            <div class="font-mono text-sm">{{ selectedServer.id }}</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-sm text-gray-500 mb-1">类型</div>
+                            <div>{{ selectedServer.type }}</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-sm text-gray-500 mb-1">版本</div>
+                            <div>{{ selectedServer.version || '-' }}</div>
+                        </div>
+                    </div>
+                    <div class="card p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-500">在线玩家</span>
+                            <span class="font-medium">{{ selectedServer.playerCount }}/{{ selectedServer.maxPlayers }}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill bg-primary-500" :style="{width: (selectedServer.playerCount/selectedServer.maxPlayers*100)+'%'}"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container">
+            <div v-for="toast in toasts" :key="toast.id" :class="['toast', toast.type]">
+                <i :data-lucide="toast.type === 'success' ? 'check-circle' : toast.type === 'error' ? 'alert-circle' : 'alert-triangle'" class="w-5 h-5"></i>
+                <span>{{ toast.message }}</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                // Theme
+                const isDark = ref(true);
+                const toggleTheme = () => {
+                    isDark.value = !isDark.value;
+                    document.body.classList.toggle('light', !isDark.value);
+                    localStorage.setItem('admin-theme', isDark.value ? 'dark' : 'light');
+                };
+
+                onMounted(() => {
+                    const savedTheme = localStorage.getItem('admin-theme');
+                    if (savedTheme === 'light') {
+                        isDark.value = false;
+                        document.body.classList.add('light');
+                    }
+                    lucide.createIcons();
+                    initCharts();
+                });
+
+                // Sidebar
+                const sidebarOpen = ref(false);
+                const currentView = ref('dashboard');
+                const version = ref('1.0.1');
+
+                const navItems = [
+                    { id: 'dashboard', name: '仪表盘', icon: 'layout-dashboard', desc: '系统概览和实时监控', badge: null },
+                    { id: 'players', name: '玩家管理', icon: 'users', desc: '管理所有玩家数据', badge: '1.2k' },
+                    { id: 'votes', name: '投票管理', icon: 'vote', desc: '跨服投票系统', badge: '2', badgeClass: 'badge-warning' },
+                    { id: 'tempbans', name: '临时封禁', icon: 'clock', desc: '踢出后的12小时临时封禁', badge: null },
+                    { id: 'rating', name: '评分统计', icon: 'star', desc: '玩家信用评分系统', badge: null },
+                    { id: 'servers', name: '服务器', icon: 'server', desc: '所有连接的服务器', badge: '4' },
+                    { id: 'config', name: '系统配置', icon: 'settings', desc: '投票规则和系统参数', badge: null },
+                    { id: 'logs', name: '系统日志', icon: 'file-text', desc: '运行日志查看', badge: null },
+                ];
+
+                const currentNavItem = computed(() => navItems.find(item => item.id === currentView.value));
+
+                // User
+                const user = ref({ name: 'Admin', role: '管理员' });
+                const logout = () => {
+                    showToast('已退出登录', 'success');
+                };
+
+                // Notifications
+                const notifOpen = ref(false);
+                const unreadCount = ref(2);
+                const notifications = ref([
+                    { id: 1, title: '服务器 forge-1 离线', time: '2分钟前', read: false },
+                    { id: 2, title: '新的投票: Kick - Steve', time: '5分钟前', read: false },
+                    { id: 3, title: '系统备份完成', time: '1小时前', read: true },
+                ]);
+
+                // Stats
+                const stats = ref([
+                    { label: '服务器总数', value: 4, status: '3在线', icon: 'server', bgClass: 'bg-indigo-500/20', iconClass: 'text-indigo-400', badgeClass: 'badge-online' },
+                    { label: '在线玩家', value: 47, status: '实时', icon: 'users', bgClass: 'bg-green-500/20', iconClass: 'text-green-400', badgeClass: '' },
+                    { label: '进行中投票', value: 2, status: '活跃', icon: 'vote', bgClass: 'bg-blue-500/20', iconClass: 'text-blue-400', badgeClass: 'badge-warning' },
+                    { label: '当前封禁', value: 5, status: '监控中', icon: 'ban', bgClass: 'bg-red-500/20', iconClass: 'text-red-400', badgeClass: 'badge-danger' },
+                ]);
+
+                // Servers
+                const servers = ref([
+                    { id: 'spigot-1', name: '主城服务器', type: 'Spigot', online: true, version: '1.21.4', playerCount: 23, maxPlayers: 100, tps: 19.8, memoryUsed: 2048, memoryMax: 4096 },
+                    { id: 'fabric-1', name: '生存服务器', type: 'Fabric', online: true, version: '1.21.4', playerCount: 15, maxPlayers: 50, tps: 20.0, memoryUsed: 1536, memoryMax: 4096 },
+                    { id: 'forge-1', name: '模组服务器', type: 'Forge', online: true, version: '1.20.1', playerCount: 9, maxPlayers: 30, tps: 18.5, memoryUsed: 3584, memoryMax: 6144 },
+                    { id: 'neoforge-1', name: '测试服务器', type: 'NeoForge', online: false, version: '1.21.2', playerCount: 0, maxPlayers: 20, tps: 0, memoryUsed: 0, memoryMax: 4096 },
+                ]);
+
+                // Players
+                const playerSearch = ref('');
+                const playerFilter = ref('');
+                const activeDropdown = ref(null);
+
+                const players = ref([
+                    { uuid: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', name: 'Steve', creditScore: 8.5, online: true, totalBans: 0, totalKicks: 1, cheaterTag: false, currentlyBanned: false, tempBanned: false, muted: false },
+                    { uuid: 'b2c3d4e5-f6a7-8901-bcde-f12345678901', name: 'Alex', creditScore: 6.2, online: true, totalBans: 1, totalKicks: 3, cheaterTag: false, currentlyBanned: false, tempBanned: false, muted: false },
+                    { uuid: 'c3d4e5f6-a7b8-9012-cdef-123456789012', name: 'Notch', creditScore: 9.1, online: false, totalBans: 0, totalKicks: 0, cheaterTag: false, currentlyBanned: false, tempBanned: false, muted: false },
+                    { uuid: 'd4e5f6a7-b8c9-0123-def0-234567890123', name: 'Herobrine', creditScore: 2.3, online: false, totalBans: 3, totalKicks: 12, cheaterTag: true, currentlyBanned: true, tempBanned: false, muted: false },
+                    { uuid: 'e5f6a7b8-c9d0-1234-ef01-345678901234', name: 'Creeper', creditScore: 4.5, online: true, totalBans: 1, totalKicks: 5, cheaterTag: false, currentlyBanned: false, tempBanned: true, muted: true },
+                ]);
+
+                const filteredPlayers = computed(() => {
+                    let result = players.value;
+                    if (playerSearch.value) {
+                        const search = playerSearch.value.toLowerCase();
+                        result = result.filter(p => p.name.toLowerCase().includes(search));
+                    }
+                    if (playerFilter.value) {
+                        switch (playerFilter.value) {
+                            case 'online': result = result.filter(p => p.online); break;
+                            case 'offline': result = result.filter(p => !p.online); break;
+                            case 'banned': result = result.filter(p => p.currentlyBanned); break;
+                            case 'muted': result = result.filter(p => p.muted); break;
+                        }
+                    }
+                    return result;
+                });
+
+                // Modals
+                const showServerModal = ref(false);
+                const selectedServer = ref(null);
+
+                const viewServer = (server) => {
+                    selectedServer.value = server;
+                    showServerModal.value = true;
+                };
+
+                // Toast
+                const toasts = ref([]);
+                const showToast = (message, type = 'success') => {
+                    const id = Date.now();
+                    toasts.value.push({ id, message, type });
+                    setTimeout(() => {
+                        toasts.value = toasts.value.filter(t => t.id !== id);
+                    }, 3000);
+                };
+
+                // Refresh
+                const refreshing = ref(false);
+                const refreshData = () => {
+                    refreshing.value = true;
+                    setTimeout(() => {
+                        refreshing.value = false;
+                        showToast('数据已刷新');
+                    }, 1000);
+                };
+
+                // Charts
+                const chartPeriod = ref('24h');
+                let playerChart = null;
+                let serverChart = null;
+
+                const initCharts = () => {
+                    // Player Chart
+                    const playerCtx = document.getElementById('playerChart');
+                    if (playerCtx) {
+                        playerChart = new Chart(playerCtx, {
+                            type: 'line',
+                            data: {
+                                labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                                datasets: [{
+                                    label: '在线玩家',
+                                    data: [12, 8, 25, 45, 38, 52, 47],
+                                    borderColor: '#6366f1',
+                                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                                    fill: true,
+                                    tension: 0.4
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: { legend: { display: false } },
+                                scales: {
+                                    y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                    x: { grid: { display: false } }
+                                }
+                            }
+                        });
+                    }
+
+                    // Server Chart
+                    const serverCtx = document.getElementById('serverChart');
+                    if (serverCtx) {
+                        serverChart = new Chart(serverCtx, {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['主城', '生存', '模组', '测试'],
+                                datasets: [{
+                                    data: [23, 15, 9, 0],
+                                    backgroundColor: ['#6366f1', '#10b981', '#f59e0b', '#6b7280'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                cutout: '70%',
+                                plugins: {
+                                    legend: { position: 'right', labels: { color: '#8888a0' } }
+                                }
+                            }
+                        });
+                    }
+                };
+
+                // Actions
+                const kickPlayer = (player) => {
+                    showToast(`已踢出玩家 ${player.name}`, 'warning');
+                };
+
+                const openBanModal = (player) => {
+                    showToast(`封禁玩家 ${player.name} 功能开发中`, 'warning');
+                };
+
+                const unbanPlayer = (player) => {
+                    showToast(`已解封玩家 ${player.name}`, 'success');
+                };
+
+                const openCommandModal = (server) => {
+                    showToast(`向 ${server.name} 发送命令功能开发中`, 'warning');
+                };
+
+                const openRateModal = (player) => {
+                    showToast(`评分玩家 ${player.name} 功能开发中`, 'warning');
+                };
+
+                const openVoteModal = (player, type) => {
+                    showToast(`发起${type}投票: ${player.name}`, 'warning');
+                };
+
+                const viewPlayer = (player) => {
+                    showToast(`查看玩家 ${player.name} 详情`, 'success');
+                };
+
+                const showAddServerModal = () => {
+                    showToast('添加服务器功能开发中', 'warning');
+                };
+
+                const showBatchModal = () => {
+                    showToast('批量操作功能开发中', 'warning');
+                };
+
+                const exportPlayers = () => {
+                    showToast('导出玩家数据功能开发中', 'warning');
+                };
+
+                return {
+                    isDark,
+                    toggleTheme,
+                    sidebarOpen,
+                    currentView,
+                    navItems,
+                    currentNavItem,
+                    version,
+                    user,
+                    logout,
+                    notifOpen,
+                    unreadCount,
+                    notifications,
+                    stats,
+                    servers,
+                    showServerModal,
+                    selectedServer,
+                    viewServer,
+                    playerSearch,
+                    playerFilter,
+                    filteredPlayers,
+                    activeDropdown,
+                    toasts,
+                    showToast,
+                    refreshing,
+                    refreshData,
+                    chartPeriod,
+                    kickPlayer,
+                    openBanModal,
+                    unbanPlayer,
+                    openCommandModal,
+                    openRateModal,
+                    openVoteModal,
+                    viewPlayer,
+                    showAddServerModal,
+                    showBatchModal,
+                    exportPlayers,
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
