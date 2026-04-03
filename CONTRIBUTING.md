@@ -2,11 +2,21 @@
 
 首先，感谢您考虑为 PCS 项目做出贡献！🎉
 
+## ⚠️ 重要说明
+
+> 🔔 **由于作者不常查看 GitHub，如果您想为项目做出贡献，请通过 QQ 联系作者。**
+>
+> 📱 **QQ: 1782307393**
+>
+> GitHub Issues 和 Pull Requests 可能无法及时处理，强烈建议直接通过 QQ 沟通！
+
+---
+
 ## 📋 贡献方式
 
 ### 🐛 报告 Bug
 
-如果您发现了 Bug，请通过 [GitHub Issues](../../issues) 提交，并包含以下信息：
+如果您发现了 Bug，请通过 **QQ** 联系作者（QQ: 1782307393），并提供以下信息：
 
 - 问题的清晰描述
 - 重现步骤
@@ -16,7 +26,7 @@
 
 ### 💡 建议新功能
 
-我们欢迎新功能建议！请通过 [GitHub Issues](../../issues) 提交，并描述：
+我们欢迎新功能建议！请通过 **QQ** 联系作者，描述：
 
 - 功能的用途
 - 预期的实现方式
@@ -26,36 +36,37 @@
 
 #### 开发流程
 
-1. **Fork 项目**
+1. **联系作者**
+   - 首先通过 **QQ: 1782307393** 与作者沟通
+   - 说明你想要贡献的内容
+   - 作者确认后，再进行开发
+
+2. **Fork 项目（可选）**
    ```bash
-   git clone https://github.com/BaiJing88/Minecraft-Player-Credit-System.git
+   git clone https://github.com/BaiJing88/PCS.git
    cd PCS
    ```
 
-2. **创建分支**
+3. **创建分支**
    ```bash
    git checkout -b feature/your-feature-name
    # 或
    git checkout -b fix/bug-description
    ```
 
-3. **进行更改**
+4. **进行更改**
    - 遵循现有的代码风格
    - 添加必要的注释
    - 更新相关文档
 
-4. **提交更改**
+5. **提交更改**
    ```bash
    git add .
    git commit -m "feat: add some feature"
    ```
 
-5. **Push 到 Fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-6. **创建 Pull Request**
+6. **联系作者提交**
+   - 通过 **QQ** 发送你的修改或 Pull Request 链接
 
 #### 提交信息规范
 
@@ -134,9 +145,11 @@ public String handleVote(String playerUuid, VoteAction action) {
 
 ## 💬 沟通渠道
 
-- 📧 QQ: 1782307393
-- 🐛 [GitHub Issues](../../issues)
-- 💭 [GitHub Discussions](../../discussions)
+> ⚠️ **强烈建议通过 QQ 联系，不常查看 GitHub！**
+
+- 📱 **QQ: 1782307393** ← 主要联系方式
+- 🐛 GitHub Issues（可能无法及时回复）
+- 💭 GitHub Discussions（可能无法及时回复）
 
 ## 🙏 感谢
 
