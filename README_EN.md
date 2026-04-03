@@ -21,7 +21,7 @@
 
 ## ⚠️ Important Warning
 
-> 🚨 **Please Note: This is a "forced release" version! (Basically usable now)**
+> 🚨 **Please Note: This is a "not recommended for use" version! (Basically usable)**
 >
 > Due to **data loss** during development, this incomplete version was released reluctantly. This version has the following issues:
 > - 🐛 **Many Bugs** - Code quality and stability cannot be guaranteed
@@ -37,27 +37,11 @@
 
 > ⚠️ **This project has been abandoned and is no longer developed or maintained by the original author.**
 >
-> This project (PCS 1.0) has stopped receiving updates. No bugs will be fixed and no new features will be added.
-> 
+> This project (PCS 1.0.1) has stopped receiving updates. No bugs will be fixed and no new features will be added.
+>
+> This project is in an intermediate state between version 1.0.1 and 1.1.0 - it's a 1.1.0 version that's still in development but not yet completed...
+>
 > For new features or better stability, please follow the development of [PCS2](#-future-plans).
-
----
-
-## 🌿 Community Edition
-
-While the original PCS has been discontinued, the community has moved forward:
-
-### PCS CE (Community Edition)
-
-Organized and led by [**Moonboos (明月庄主)**](https://space.bilibili.com/2170934?spm_id_from=333.337.0.0):
-
-👉 **GitHub**: https://github.com/MYZH/PCS_CE
-
-- ✅ Actively maintained and updated
-- ✅ Community-driven development
-- ✅ May include features not in the original version
-
-If you need a version that is **actively maintained**, consider using PCS CE.
 
 ---
 
@@ -102,26 +86,25 @@ If you need a version that is **actively maintained**, consider using PCS CE.
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────┐     WebSocket      ┌─────────────────┐
-│   Web Dashboard │ ◄────────────────► │ Central Server  │
-│   (Browser)     │                    │ (Spring Boot)   │
-└─────────────────┘                    └────────┬────────┘
-                                                │
-                          ┌─────────────────────┼─────────────────────┐
-                          │                     │                     │
-                          ▼                     ▼                     ▼
-                   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-                   │ Spigot-1    │      │ Spigot-2    │      │ Spigot-N    │
-                   │  Server     │      │  Server     │      │  Server     │
-                   └─────────────┘      └─────────────┘      └─────────────┘
+```mermaid
+graph TB
+    A[🌐 Web Dashboard] -->|HTTP/WebSocket| B[⚙️ Central Server<br/>Spring Boot]
+    B <-->|WebSocket| C[🎮 Spigot Server-1]
+    B <-->|WebSocket| D[🎮 Spigot Server-2]
+    B <-->|WebSocket| E[🎮 Spigot Server-N]
+    
+    style B fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style A fill:#2196F3,stroke:#1565C0,color:#fff
+    style C fill:#FF9800,stroke:#E65100,color:#fff
+    style D fill:#FF9800,stroke:#E65100,color:#fff
+    style E fill:#FF9800,stroke:#E65100,color:#fff
 ```
 
 ---
 
 ## 📸 Screenshots
 
-> 🤔 **Author says**: Screenshots? Coming soon! (Actually just lazy)
+> 🤔 **Author says**: Screenshots? Coming next time! (Actually just lazy)
 
 <div align="center">
 
@@ -169,7 +152,7 @@ If you need a version that is **actively maintained**, consider using PCS CE.
 
 ```bash
 # Clone repository
-git clone https://github.com/BaiJing88/Minecraft-Player-Credit-System.git
+git clone https://github.com/BaiJing88/PCS.git
 cd PCS
 
 # Build central server
@@ -177,10 +160,6 @@ cd PCS
 
 # Run
 java -jar PCS-CentralController/build/libs/PCS-CentralController-1.0.0.jar
-
-# Or use scripts
-# Windows: start-central-controller.bat
-# Linux/Mac: ./start-central-controller.sh
 ```
 
 **Default Access:**
@@ -263,7 +242,7 @@ The server will automatically connect to the central server upon startup.
 ### 📥 Clone Project
 
 ```bash
-git clone https://github.com/BaiJing88/Minecraft-Player-Credit-System.git
+git clone https://github.com/BaiJing88/PCS.git
 cd PCS
 ```
 
@@ -297,9 +276,9 @@ PCS/
 │   ├── src/main/java/com/pcs/central/
 │   │   ├── controller/            # REST API Controllers
 │   │   ├── service/               # Business Logic
-│   │   ├── websocket/             # WebSocket Handlers
+│   │   ├── websocket/              # WebSocket Handlers
 │   │   └── security/              # Security Config
-│   ├── src/main/resources/static/ # Web Frontend
+│   ├── src/main/resources/static/  # Web Frontend
 │   └── build.gradle
 │
 ├── 🎮 PCS-Spigot/                 # Spigot Plugin
@@ -310,9 +289,13 @@ PCS/
 │   │   └── websocket/             # WebSocket Client
 │   └── build.gradle
 │
-├── 📜 LICENSE                     # AGPL v3 License
-├── 📖 README.md                   # This File
-└── ⚙️ settings.gradle             # Project Config
+├── 📜 PCS-Fabric/                  # Fabric Mod
+├── 📜 PCS-Forge/                   # Forge Mod
+├── 📜 PCS-NeoForge/                # NeoForge Mod
+│
+├── 📜 LICENSE                      # AGPL v3 License
+├── 📖 README.md                     # This File
+└── ⚙️ settings.gradle              # Project Config
 ```
 
 ### 💾 Database Configuration
@@ -320,7 +303,7 @@ PCS/
 The central server uses **H2** embedded database by default. For production, **MySQL** is recommended:
 
 ```yaml
-# config/application.yml
+# PCS-CentralController/config/application.yml
 spring:
   datasource:
     url: jdbc:mysql://localhost:3306/pcsdb?useSSL=true
@@ -370,17 +353,17 @@ See [LICENSE](LICENSE) file for details.
 
 ## 🔮 Future Plans
 
-### PCS2 Development Announcement
+### PCS2 Development Preview
 
 > 🎉 **Big News!** The author plans to completely rewrite this project in **H2 2026**!
 >
 > New project name: ~~Player Credit System Pro Max Plus Ultra Premium Elite Advanced Extreme Deluxe~~
 >
-> Actual name: **Player Credit System 2 (PCS2)** 😄
+> Actually the real name is: **Player Credit System 2 (PCS2)** 😄
 
 **Planned PCS2 Features:**
-- 🚀 Brand new architecture
-- 📱 Mobile management app
+- 🚀 Brand new architecture design
+- 📱 Mobile management APP
 - 🤖 AI-assisted player behavior analysis
 - 🌐 Support for more game platforms
 - ⚡ Significant performance improvements
@@ -404,7 +387,7 @@ See [LICENSE](LICENSE) file for details.
 
 If this project helps you, please give us a **Star**!
 
-[![Star History Chart](https://api.star-history.com/svg?repos=BaiJing88/Minecraft-Player-Credit-System&type=Date)](https://star-history.com/#BaiJing88/PCS&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=BaiJing88/PCS&type=Date)](https://star-history.com/#BaiJing88/PCS&Date)
 
 ---
 
